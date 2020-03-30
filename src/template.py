@@ -1,4 +1,50 @@
+
 def set_template(args):
+    # My templates
+    if args.template.lower().find('toy') >= 0:
+        import sys
+        args.ext = 'img'
+
+        # If cpu was not explicitly set,
+        # set if available
+        if not '--cpu' in sys.argv:
+            from torch import cuda
+            if cuda.is_available():
+                args.cpu = False
+            else:
+                args.cpu = True
+
+        # Model
+        args.model = 'TOY'
+        args.act = 'relu'
+        args.n_resblocks = 32
+        args.n_feats = 32
+        args.res_scale = 1
+        args.shift_mean = False
+
+        # Data
+        args.dir_data = '../../Data'
+        args.data_train = 'DIV2K'
+        args.data_test = 'DIV2K'
+        #args.data_range = '1-15/16-20'
+        args.data_range = '1-1/16-16'
+        args.patch_size = 48
+        args.rgb_range = 255
+        args.n_colors = 3
+
+        # Training
+        args.loss = '1*L1'
+        args.batch_size = 16
+
+        # Optimizer
+        args.optimizer = 'ADAM'
+        args.lr = 0.0001
+        args.momentum = 0.9
+        args.decay = '200'
+        args.gamma = 0.5
+        args.weight_decay = 0
+        args.betas = (0.9, 0.999)
+
     # Set the templates here
     if args.template.find('jpeg') >= 0:
         args.data_train = 'DIV2K_jpeg'
