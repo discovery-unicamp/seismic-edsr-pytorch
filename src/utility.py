@@ -166,7 +166,6 @@ def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
     if hr.nelement() == 1: return 0
 
     diff = (sr - hr) / rgb_range
-    print('\ndiff:', diff.size())
     if dataset and dataset.dataset.benchmark:
         shave = scale
         if diff.size(1) > 1:
@@ -177,7 +176,6 @@ def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
         shave = scale + 6
 
     valid = diff[..., shave:-shave, shave:-shave]
-    print('valid:', valid.size())
     mse = valid.pow(2).mean()
 
 

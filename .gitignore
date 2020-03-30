@@ -63,5 +63,6 @@ target/
 *.png
 *.txt
 *.swp
+*.bak
 .vscode
 .ipynb_checkpoints
