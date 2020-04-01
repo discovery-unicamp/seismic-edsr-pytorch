@@ -8,6 +8,14 @@ parser.add_argument('--debug', action='store_true',
 parser.add_argument('--template', default='.',
                     help='You can set various templates in option.py')
 
+# TensorBoard
+parser.add_argument('--tensorboard', action='store_true',
+                    help='Uses TensorBoard to visualize training.')
+parser.add_argument('--dir_tensorboard', type=str, default='tensorboard',
+                    help='Directory for TensorBoard logs.')
+parser.add_argument('--port_tensorboard', type=str, default='6006',
+                    help='Port to run TensorBoard.')
+
 # Hardware specifications
 parser.add_argument('--n_threads', type=int, default=6,
                     help='number of threads for data loading')

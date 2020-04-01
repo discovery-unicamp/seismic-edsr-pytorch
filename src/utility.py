@@ -79,6 +79,46 @@ class checkpoint():
 
         self.n_processes = 8
 
+        # TensorBoard
+        if args.tensorboard:
+            from torch.utils.tensorboard import SummaryWriter
+            import tensorboard
+
+            # Check tensorboard version
+            tb_version = tensorboard.__version__
+            if int(tb_version.split('.')[0]) < 2:
+                print("Requires TensorBoard version >= 2.X but has version",
+                        tb_version)
+                print("You can unset the --tensorboard option. Exiting.")
+                sys.exit()
+
+            # Launch TensorBoard and create writer
+            tb_path = self.get_path(args.dir_tensorboard)
+            tb = tensorboard.program.TensorBoard()
+            tb.configure(argv=[None, '--logdir', tb_path, 
+                '--port', args.port_tensorboard])
+            url = tb.launch()
+            print("TensorBoard launched at", url)
+                      
+            self.tensorboard_writer = SummaryWriter(tb_path)
+
+    def tensorboard_log(self, tag, scalar_dic, global_step=None):
+        if self.args.tensorboard:
+            self.tensorboard_writer.add_scalars(tag, scalar_dic, global_step)
+
+    def tensorboard_images(self, tag, img_list, global_step=None):
+        if self.args.tensorboard:
+            ndim = img_list[0].dim()
+            dataformats = 'NCHW'
+            if ndim == 3:
+                img_list = [img.expand(1,-1,-1,-1) for img in img_list]
+            elif ndim == 2:
+                img_list = [img.expand(1,-1,-1) for img in img_list]
+                dataformats = 'NHW'
+            images = torch.cat(img_list, dim=0)
+            images /= self.args.rgb_range
+            self.tensorboard_writer.add_images(tag, images, global_step)
+
     def get_path(self, *subdir):
         return os.path.join(self.dir, *subdir)
 
