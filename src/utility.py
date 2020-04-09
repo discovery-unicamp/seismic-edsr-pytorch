@@ -16,6 +16,8 @@ import torch
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
 
+from data import common
+
 class timer():
     def __init__(self):
         self.acc = 0
@@ -107,17 +109,38 @@ class checkpoint():
             self.tensorboard_writer.add_scalars(tag, scalar_dic, global_step)
 
     def tensorboard_images(self, tag, img_list, global_step=None):
+        # img_list must be a list of pairs [SR, LR]
         if self.args.tensorboard:
-            ndim = img_list[0].dim()
-            dataformats = 'NCHW'
-            if ndim == 3:
-                img_list = [img.expand(1,-1,-1,-1) for img in img_list]
-            elif ndim == 2:
-                img_list = [img.expand(1,-1,-1) for img in img_list]
-                dataformats = 'NHW'
-            images = torch.cat(img_list, dim=0)
-            images /= self.args.rgb_range
-            self.tensorboard_writer.add_images(tag, images, global_step)
+            nrow = len(img_list)
+            ncol = len(img_list[0])
+
+            fig, axes = plt.subplots(nrow, ncol, squeeze=False)
+
+            # Set fig dimensions
+            fig_width = max([pair[0].shape[3] for pair in img_list])
+            fig_width = (ncol*fig_width) / fig.dpi
+            fig_height = sum([pair[0].shape[2] for pair in img_list])
+            fig_height /= fig.dpi
+            fig.set_size_inches(fig_width, fig_height)
+
+            for i in range(nrow):
+                for j in range(ncol):
+                    img = img_list[i][j].squeeze()
+                    # If it's color image, make it channel last and in [0, 1] range
+                    if img.dim() == 3:
+                        img = img.permute(1, 2, 0)
+                        img, = common.linear_shift(img,
+                                in_range=self.args.tensor_range,
+                                out_range=[0., 1.])
+                    ax = axes[i][j]
+                    ax.imshow(img, vmin=self.args.tensor_range[0], 
+                            vmax=self.args.tensor_range[1],
+                            cmap=self.args.tensorboard_color,
+                            interpolation='lanczos')
+                    ax.set_axis_off()
+
+
+            self.tensorboard_writer.add_figure(tag, fig, global_step)
 
     def get_path(self, *subdir):
         return os.path.join(self.dir, *subdir)
@@ -193,24 +216,42 @@ class checkpoint():
             )
 
             postfix = ('SR', 'LR', 'HR')
+            ext = dataset.dataset.ext[1]
             for v, p in zip(save_list, postfix):
-                normalized = v[0].mul(255 / self.args.rgb_range)
-                tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
-                self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))
+                if ext.find('.tif') >= 0:
+                    normalized = to_output(v[0], 
+                            input_range=self.args.input_range,
+                            tensor_range=self.args.tensor_range)[0]
+                    tensor_cpu = normalized.squeeze().cpu()
+                else:
+                    normalized = to_output(v[0], 
+                            input_range=self.args.input_range,
+                            tensor_range=self.args.tensor_range,
+                            quantize=True)[0]
+                    tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
+                self.queue.put(('{}{}{}'.format(filename, p, ext), tensor_cpu))
 
-def quantize(img, rgb_range):
-    pixel_range = 255 / rgb_range
-    return img.mul(pixel_range).clamp(0, 255).round().div(pixel_range)
+def clip(img, clip_range):
+    return img.clamp(clip_range[0], clip_range[1])
 
-def calc_psnr(sr, hr, scale, rgb_range, dataset=None):
+def to_output(*tensors, input_range, tensor_range, quantize=False):
+    normalized = common.linear_shift(*tensors, 
+            in_range=tensor_range,
+            out_range=input_range)
+    if quantize:
+        normalized = [t.round() for t in normalized]
+    return normalized
+
+def calc_psnr(sr, hr, scale, dynamic_range, dataset=None):
     if hr.nelement() == 1: return 0
 
-    diff = (sr - hr) / rgb_range
+    diff = (sr - hr) / dynamic_range
     if dataset and dataset.dataset.benchmark:
         shave = scale
         if diff.size(1) > 1:
-            gray_coeffs = [65.738, 129.057, 25.064]
-            convert = diff.new_tensor(gray_coeffs).view(1, 3, 1, 1) / 256
+            # Coeficients to compute luminance from RGB
+            gray_coeffs = [0.2125, 0.7154, 0.0721]
+            convert = diff.new_tensor(gray_coeffs).view(1, 3, 1, 1) 
             diff = diff.mul(convert).sum(dim=1)
     else:
         shave = scale + 6

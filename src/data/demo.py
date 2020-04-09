@@ -27,7 +27,9 @@ class Demo(data.Dataset):
         filename = os.path.splitext(os.path.basename(self.filelist[idx]))[0]
         lr = imageio.imread(self.filelist[idx])
         lr, = common.set_channel(lr, n_channels=self.args.n_colors)
-        lr_t, = common.np2Tensor(lr, rgb_range=self.args.rgb_range)
+        lr_t, = common.np2Tensor(lr)
+        pair_t = common.linear_shift(*pair, in_range=self.args.in_range,
+                out_range=self.args.out_range)
 
         return lr_t, -1, filename
 

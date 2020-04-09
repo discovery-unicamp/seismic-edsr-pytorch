@@ -27,9 +27,10 @@ class Loss(nn.modules.loss._Loss):
                 loss_function = nn.L1Loss()
             elif loss_type.find('VGG') >= 0:
                 module = import_module('loss.vgg')
+                dynamic_range = args.tensor_range[1] - args.tensor_range[0]
                 loss_function = getattr(module, 'VGG')(
                     loss_type[3:],
-                    rgb_range=args.rgb_range
+                    rgb_range=dynamic_range
                 )
             elif loss_type.find('GAN') >= 0:
                 module = import_module('loss.adversarial')

@@ -14,8 +14,8 @@ class TOY(nn.Module):
         kernel_size = 3 
         scale = args.scale[0]
         act = nn.ReLU(True)
-        self.sub_mean = common.MeanShift(args.rgb_range)
-        self.add_mean = common.MeanShift(args.rgb_range, sign=1)
+        #self.sub_mean = common.MeanShift(args.rgb_range)
+        #self.add_mean = common.MeanShift(args.rgb_range, sign=1)
 
         # define head module
         m_head = [conv(args.n_colors, n_feats, kernel_size)]
@@ -30,10 +30,10 @@ class TOY(nn.Module):
         self.tail = nn.Sequential(*m_tail)
 
     def forward(self, x):
-        x = self.sub_mean(x)
+        #x = self.sub_mean(x)
         x = self.head(x)
         x = self.tail(x)
-        x = self.add_mean(x)
+        #x = self.add_mean(x)
 
         return x 
 

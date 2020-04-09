@@ -11,6 +11,8 @@ parser.add_argument('--template', default='.',
 # TensorBoard
 parser.add_argument('--tensorboard', action='store_true',
                     help='Uses TensorBoard to visualize training.')
+parser.add_argument('--tensorboard_color', type=str, default='gray',
+                    help='Color to plot images in TensorBoard.')
 parser.add_argument('--dir_tensorboard', type=str, default='tensorboard',
                     help='Directory for TensorBoard logs.')
 parser.add_argument('--port_tensorboard', type=str, default='6006',
@@ -27,6 +29,11 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
 
 # Data specifications
+parser.add_argument('--input_range', type=str, default='0,255',
+                    help=('Minimum and maximum possible values of the input signal,'
+                    'separated by a comma. Ex: RGB range is typically "0,255".'))
+parser.add_argument('--tensor_range', type=str, default='-1,1',
+                    help=('New range to linearly transform the input before it goes into the network.'))
 parser.add_argument('--dir_data', type=str, default='../../../dataset',
                     help='dataset directory')
 parser.add_argument('--dir_demo', type=str, default='../test',
@@ -43,8 +50,6 @@ parser.add_argument('--scale', type=str, default='4',
                     help='super resolution scale')
 parser.add_argument('--patch_size', type=int, default=192,
                     help='output patch size')
-parser.add_argument('--rgb_range', type=int, default=255,
-                    help='maximum value of RGB')
 parser.add_argument('--n_colors', type=int, default=3,
                     help='number of color channels to use')
 parser.add_argument('--chop', action='store_true',
@@ -155,6 +160,8 @@ args = parser.parse_args()
 template.set_template(args)
 
 args.scale = list(map(lambda x: int(x), args.scale.split('+')))
+args.input_range = [float(x) for x in args.input_range.split(',')]
+args.tensor_range = [float(x) for x in args.tensor_range.split(',')]
 args.data_train = args.data_train.split('+')
 args.data_test = args.data_test.split('+')
 

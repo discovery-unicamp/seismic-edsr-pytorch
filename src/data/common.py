@@ -46,15 +46,28 @@ def set_channel(*args, n_channels=3):
 
     return [_set_channel(a) for a in args]
 
-def np2Tensor(*args, rgb_range=255):
+def np2Tensor(*args):
     def _np2Tensor(img):
         np_transpose = np.ascontiguousarray(img.transpose((2, 0, 1)))
         tensor = torch.from_numpy(np_transpose).float()
-        tensor.mul_(rgb_range / 255)
 
         return tensor
 
     return [_np2Tensor(a) for a in args]
+
+def linear_shift(*signals, in_range, out_range):
+    # Avoid unnecessary work
+    if in_range == out_range:
+        def _shift(in_signal):
+            return in_signal
+    else:
+        in_span = in_range[1] - in_range[0]
+        out_span = out_range[1] - out_range[0]
+        def _shift(in_signal):
+            k = out_span / in_span
+            out_signal = in_signal * k + (-in_range[0]*k + out_range[0])
+            return out_signal
+    return [_shift(s) for s in signals]
 
 def augment(*args, hflip=True, rot=True):
     hflip = hflip and random.random() < 0.5

@@ -115,11 +115,13 @@ class Trainer():
                 for i, (lr, hr, filename) in enumerate(tqdm(d, ncols=80)):
                     lr, hr = self.prepare(lr, hr)
                     sr = self.model(lr, idx_scale)
-                    sr = utility.quantize(sr, self.args.rgb_range)
+                    sr = utility.clip(sr, self.args.tensor_range)
 
                     save_list = [sr]
+                    dynamic_range = (self.args.tensor_range[1] - 
+                                    self.args.tensor_range[0])
                     psnr = utility.calc_psnr(
-                        sr, hr, scale, self.args.rgb_range, dataset=d
+                        sr, hr, scale, dynamic_range, dataset=d
                     )
                     self.ckp.log[-1, idx_data, idx_scale] += psnr
 
@@ -130,29 +132,31 @@ class Trainer():
                         self.ckp.save_results(d, filename[0], save_list, scale)
 
                     # TensorBoard update vars
-                    avg_psnr += psnr 
-                    best_psnr = psnr if psnr > best_psnr else best_psnr 
-                    worst_psnr = psnr if psnr < worst_psnr else worst_psnr 
+                    if not self.args.test_only:
+                        avg_psnr += psnr 
+                        best_psnr = psnr if psnr > best_psnr else best_psnr 
+                        worst_psnr = psnr if psnr < worst_psnr else worst_psnr 
 
-                    loss = self.loss(sr, hr).item()
-                    avg_loss += loss 
-                    max_loss = loss if loss > max_loss else max_loss 
-                    min_loss = loss if loss < min_loss else min_loss 
+                        loss = self.loss(sr, hr).item()
+                        avg_loss += loss 
+                        max_loss = loss if loss > max_loss else max_loss 
+                        min_loss = loss if loss < min_loss else min_loss 
 
-                    # TensorBoard log img
-                    if i == tb_img_idx:
-                        self.ckp.tensorboard_images('Test', [sr, hr], self.step)
+                        # TensorBoard log img
+                        if i == tb_img_idx:
+                            self.ckp.tensorboard_images('Test', [sr, hr], self.step)
 
                 # TensorBoard log
-                loss_dic = {'avg': avg_loss/len(d),
-                            'min': min_loss,
-                            'max': max_loss} 
-                self.ckp.tensorboard_log('Loss/test', loss_dic, self.step)
+                if not self.args.test_only:
+                    loss_dic = {'avg': avg_loss/len(d),
+                                'min': min_loss,
+                                'max': max_loss} 
+                    self.ckp.tensorboard_log('Loss/test', loss_dic, self.step)
 
-                psnr_dic = {'avg': avg_psnr/len(d),
-                            'best': best_psnr,
-                            'worst': worst_psnr} 
-                self.ckp.tensorboard_log('PSNR', psnr_dic, self.step)
+                    psnr_dic = {'avg': avg_psnr/len(d),
+                                'best': best_psnr,
+                                'worst': worst_psnr} 
+                    self.ckp.tensorboard_log('PSNR', psnr_dic, self.step)
 
                 # EDSR log
                 self.ckp.log[-1, idx_data, idx_scale] /= len(d)

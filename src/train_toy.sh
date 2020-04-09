@@ -18,13 +18,14 @@
 
 python main.py \
     --reset \
+    --tensorboard \
     --template TOY \
     --n_threads        12 \
-    --print_every      100 \
     --seed             42 \
-    --save toy \
+    --save toy_tiff_08ABR \
     \
     --scale '2' \
     \
-    --test_every 100 \
+    --print_every 5 \
+    --test_every 5 \
     --epochs 10 \

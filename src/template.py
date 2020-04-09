@@ -24,12 +24,13 @@ def set_template(args):
 
         # Data
         args.dir_data = '../../Data'
-        args.data_train = 'DIV2K'
-        args.data_test = 'DIV2K'
+        args.data_train = 'DIV2K_TIFF'
+        args.data_test = 'DIV2K_TIFF'
         args.data_range = '1-15/16-20'
+        args.input_range = '-1., 1.'
+        args.tensor_range = '-1., 1.'
         args.patch_size = 48
-        args.rgb_range = 255
-        args.n_colors = 3
+        args.n_colors = 1
 
         # Training
         args.loss = '1*L1'
