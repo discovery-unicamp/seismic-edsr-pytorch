@@ -11,6 +11,8 @@ parser.add_argument('--template', default='.',
 # TensorBoard
 parser.add_argument('--tensorboard', action='store_true',
                     help='Uses TensorBoard to visualize training.')
+parser.add_argument('--tensorboard_nimgs', type=int, default=5,
+                    help='Number of images to plot in TensorBoard during test.')
 parser.add_argument('--tensorboard_color', type=str, default='gray',
                     help='Color to plot images in TensorBoard.')
 parser.add_argument('--dir_tensorboard', type=str, default='tensorboard',

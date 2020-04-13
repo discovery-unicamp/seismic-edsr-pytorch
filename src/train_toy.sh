@@ -22,10 +22,10 @@ python main.py \
     --template TOY \
     --n_threads        12 \
     --seed             42 \
-    --save toy_tiff_08ABR \
+    --save toy_tiff_09ABR_X4 \
     \
-    --scale '2' \
+    --scale '4' \
     \
-    --print_every 5 \
-    --test_every 5 \
+    --print_every 100 \
+    --test_every 1000 \
     --epochs 10 \

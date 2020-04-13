@@ -110,7 +110,10 @@ class Trainer():
                 avg_loss = 0 
 
                 # Draw image index to plot in TensorBoard
-                tb_img_idx = random.randint(len(d))
+                idx_size = min(self.args.tensorboard_nimgs, len(d))
+                tb_img_idxs = random.choice(len(d), size=idx_size, replace=False)
+                tb_img_idxs.sort()
+                tb_imgs = []
 
                 for i, (lr, hr, filename) in enumerate(tqdm(d, ncols=80)):
                     lr, hr = self.prepare(lr, hr)
@@ -141,12 +144,11 @@ class Trainer():
                         avg_loss += loss 
                         max_loss = loss if loss > max_loss else max_loss 
                         min_loss = loss if loss < min_loss else min_loss 
-
-                        # TensorBoard log img
-                        if i == tb_img_idx:
-                            self.ckp.tensorboard_images('Test', [sr, hr], self.step)
+                    if i in tb_img_idxs:
+                        tb_imgs.append([sr, hr])
 
                 # TensorBoard log
+                self.ckp.tensorboard_images('Test', tb_imgs, self.step)
                 if not self.args.test_only:
                     loss_dic = {'avg': avg_loss/len(d),
                                 'min': min_loss,
