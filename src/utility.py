@@ -132,6 +132,7 @@ class checkpoint():
                         img, = common.linear_shift(img,
                                 in_range=self.args.tensor_range,
                                 out_range=[0., 1.])
+                    img = img.cpu()
                     ax = axes[i][j]
                     ax.imshow(img, vmin=self.args.tensor_range[0], 
                             vmax=self.args.tensor_range[1],
@@ -166,6 +167,30 @@ class checkpoint():
 
     def done(self):
         self.log_file.close()
+        if self.args.tensorboard:
+            import signal
+            import sys
+            original_sigint = signal.getsignal(signal.SIGINT)
+
+            def exit_gracefully(signum, frame):
+                signal.signal(signal.SIGINT, original_sigint)
+
+                try:
+                    if input("\nDo you want to quit? (y/n)> ").lower().startswith('y'):
+                        print("Bye bye!")
+                        sys.exit(1)
+                    else: print("Continue waiting. Press CTRL+C to quit.")
+                except KeyboardInterrupt:
+                    print("\nBye bye!")
+                    sys.exit(1)
+
+                # restore the exit gracefully handler here    
+                signal.signal(signal.SIGINT, exit_gracefully)
+
+
+            signal.signal(signal.SIGINT, exit_gracefully)
+            print("TensorBoard is active. Press CTRL+C to end program.")
+            while True: time.sleep(1)
 
     def plot_psnr(self, epoch):
         axis = np.linspace(1, epoch, epoch)
