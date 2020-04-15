@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [[ $# -ne 1 ]] ;
-	then echo "Usage: ./dataset_dimension.sh <path/to/images>"
+	then echo "Usage: ./dataset_dimension.sh <path/to/HR/images>"
 	exit 2
 fi
 
