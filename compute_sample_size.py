@@ -1,10 +1,12 @@
 import argparse
+import os
 import numpy as np
+from imageio import get_reader
 
 parser = argparse.ArgumentParser(description='Train set size from parameters')
 
-parser.add_argument('images_dim_file', 
-                    help='File name with list of image dimensions')
+parser.add_argument('HR_images_dir', 
+                    help='Directory path to HR images')
 parser.add_argument('--patch_size', type=int, default=192,
                     help='output patch size')
 parser.add_argument('--batch_size', type=int, default=16,
@@ -23,7 +25,21 @@ train_range = np.arange(*train_range)
 test_range = np.arange(*test_range)
 
 # Load image dimensions
-img_dims = np.loadtxt(args.images_dim_file, delimiter=',')
+img_dims = []
+d = args.HR_images_dir
+img_files = os.listdir(d)
+img_files.sort()
+
+for img_file in img_files:
+    img_file = os.path.join(d, img_file)
+    img_reader = get_reader(img_file)
+    metadata = img_reader.get_meta_data()
+    s = metadata['description']
+    dim = [int(d) for d in s.split('[')[1].split(']')[0].split(',')]
+    img_dims.append(dim[::-1])
+    img_reader.close()
+
+img_dims = np.array(img_dims)
 
 # Assume side-by-side windows per image (grid)
 train_samples = np.floor(img_dims[train_range] / args.patch_size)
