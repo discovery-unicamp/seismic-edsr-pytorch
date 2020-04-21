@@ -1,6 +1,52 @@
 
 def set_template(args):
     # My templates
+    if args.template.lower().find('edsr_tiff') >= 0:
+        import sys
+        args.ext = 'img'
+
+        # If cpu was not explicitly set,
+        # set if available
+        if not '--cpu' in sys.argv:
+            from torch import cuda
+            if cuda.is_available():
+                args.cpu = False
+            else:
+                args.cpu = True
+
+        # Model
+        args.model = 'EDSR'
+        args.act = 'relu'
+        args.n_resblocks = 32
+        args.n_feats = 64 
+        args.res_scale = 1
+        args.shift_mean = False
+
+        # Data
+        args.dir_data = '../../Data'
+        args.data_train = 'DIV2K_TIFF'
+        args.data_test = 'DIV2K_TIFF'
+        args.data_range = '1-800/801-825'
+        args.input_range = '-1., 1.'
+        args.tensor_range = '-1., 1.'
+        args.patch_size = 192 
+        args.n_colors = 1
+
+        # Training
+        args.loss = '1*L1'
+        args.batch_size = 16
+
+        # Optimizer
+        args.optimizer = 'ADAM'
+        args.lr = 0.0001
+        args.momentum = 0.9
+		# Multiply lr by gamma at 'decay' epochs
+        args.decay = '200'
+        args.gamma = 0.5
+        args.weight_decay = 0
+        args.betas = (0.9, 0.999)
+        args.epsilon = 1e-8
+
     if args.template.lower().find('toy') >= 0:
         import sys
         args.ext = 'img'
@@ -26,10 +72,10 @@ def set_template(args):
         args.dir_data = '../../Data'
         args.data_train = 'DIV2K_TIFF'
         args.data_test = 'DIV2K_TIFF'
-        args.data_range = '1-15/16-20'
+        args.data_range = '1-800/801-825'
         args.input_range = '-1., 1.'
         args.tensor_range = '-1., 1.'
-        args.patch_size = 48
+        args.patch_size = 192 
         args.n_colors = 1
 
         # Training
@@ -40,7 +86,8 @@ def set_template(args):
         args.optimizer = 'ADAM'
         args.lr = 0.0001
         args.momentum = 0.9
-        args.decay = '200'
+		# Multiply lr by gamma at 'decay' epochs
+        args.decay = '4-8'
         args.gamma = 0.5
         args.weight_decay = 0
         args.betas = (0.9, 0.999)

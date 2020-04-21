@@ -14,18 +14,19 @@
 #    --resume -1 \
 #    --test_only \
     #--reset \
-#    --pre_train ../experiment/toy_tiff_X2/model/model_best.pt \
 # python -m pdb main.py \
 
 python main.py \
+    --resume -1 \
+    --load edsr_tiff_X2 \
     --tensorboard \
-    --template TOY \
+    --template edsr_tiff \
     --n_threads        6 \
     --seed             42 \
-    --save toy_tiff_X4_nopre \
+    --save edsr_tiff_X2 \
     \
-    --scale '4' \
+    --scale '2' \
     \
     --print_every 50 \
     --test_every 1000 \
-    --epochs 12 \
+    --epochs 110 \
