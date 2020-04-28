@@ -50,20 +50,34 @@ class checkpoint():
         self.log = torch.Tensor()
         now = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 
+        if args.resume and os.path.exists(
+                os.path.join('..', 'experiment', args.save)):
+            args.load = args.save
+
         if not args.load:
             if not args.save:
                 args.save = now
             self.dir = os.path.join('..', 'experiment', args.save)
         else:
             self.dir = os.path.join('..', 'experiment', args.load)
-            if os.path.exists(self.dir):
-                self.log = torch.load(self.get_path('psnr_log.pt'))
-                print('Continue from epoch {}...'.format(len(self.log)))
-            else:
-                args.load = ''
 
         if args.reset:
-            os.system('rm -rf ' + self.dir)
+            if input("--reset option will erase {}. Continue? (y/N): ".
+                    format(self.dir)).lower() == 'y':
+                os.system('rm -rf ' + self.dir)
+                args.load = ''
+            else:
+                import sys
+                print("Terminating.")
+                sys.exit()
+
+        if os.path.exists(self.dir) and args.load:
+            self.log = torch.load(self.get_path('psnr_log.pt'))
+            print('Continue from epoch {}...'.format(len(self.log)+1))
+            if not args.resume:
+                args.resume = -1
+        else:
+            args.resume = 0
             args.load = ''
 
         os.makedirs(self.dir, exist_ok=True)
@@ -102,7 +116,12 @@ class checkpoint():
             url = tb.launch()
             print("TensorBoard launched at", url)
                       
-            self.tensorboard_writer = SummaryWriter(tb_path)
+            # If resuming, throw out intermediate steps between epochs
+            if args.resume:
+                purge_step = len(self.log) * args.test_every
+            else:
+                purge_step = 0
+            self.tensorboard_writer = SummaryWriter(tb_path, purge_step=purge_step)
 
     def tensorboard_log(self, tag, scalar_dic, global_step=None):
         if self.args.tensorboard:
@@ -307,9 +326,12 @@ def make_optimizer(args, target):
         kwargs_optimizer['eps'] = args.epsilon
 
     # scheduler
-    milestones = list(map(lambda x: int(x), args.decay.split('-')))
-    kwargs_scheduler = {'milestones': milestones, 'gamma': args.gamma}
-    scheduler_class = lrs.MultiStepLR
+    kwargs_scheduler = {'mode': 'max', 'factor': args.gamma,
+            'patience': args.lr_patience, 'verbose': True, 'threshold': 0.0001,
+            'threshold_mode': 'rel', 'cooldown': args.lr_patience,
+            'min_lr': args.lr * (args.gamma ** args.lr_max_updates),
+            'eps': 1e-08}
+    scheduler_class = lrs.ReduceLROnPlateau
 
     class CustomOptimizer(optimizer_class):
         def __init__(self, *args, **kwargs):
@@ -319,21 +341,23 @@ def make_optimizer(args, target):
             self.scheduler = scheduler_class(self, **kwargs)
 
         def save(self, save_dir):
-            torch.save(self.state_dict(), self.get_dir(save_dir))
+            torch.save(self.state_dict(), self.get_dir(save_dir, 'optimizer.pt'))
+            torch.save(self.scheduler.state_dict(),
+                    self.get_dir(save_dir, 'lr_scheduler.pt'))
 
         def load(self, load_dir, epoch=1):
-            self.load_state_dict(torch.load(self.get_dir(load_dir)))
-            if epoch > 1:
-                for _ in range(epoch): self.scheduler.step()
+            self.load_state_dict(torch.load(self.get_dir(load_dir, 'optimizer.pt')))
+            self.scheduler.load_state_dict(torch.load(
+                self.get_dir(load_dir, 'lr_scheduler.pt')))
 
-        def get_dir(self, dir_path):
-            return os.path.join(dir_path, 'optimizer.pt')
+        def get_dir(self, dir_path, file_name):
+            return os.path.join(dir_path, file_name)
 
-        def schedule(self):
-            self.scheduler.step()
+        def schedule(self, metric):
+            self.scheduler.step(metric)
 
         def get_lr(self):
-            return self.scheduler.get_lr()[0]
+            return self.param_groups[0]['lr']
 
         def get_last_epoch(self):
             return self.scheduler.last_epoch

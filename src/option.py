@@ -118,8 +118,10 @@ parser.add_argument('--gan_k', type=int, default=1,
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4,
                     help='learning rate')
-parser.add_argument('--decay', type=str, default='200',
-                    help='learning rate decay type')
+parser.add_argument('--lr_patience', type=int, default=20,
+                    help='Patience (in epochs) do update learning rate')
+parser.add_argument('--lr_max_updates', type=int, default=4,
+                    help='Max. number of times lr is updated.')
 parser.add_argument('--gamma', type=float, default=0.5,
                     help='learning rate decay factor for step decay')
 parser.add_argument('--optimizer', default='ADAM',

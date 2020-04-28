@@ -39,10 +39,10 @@ def set_template(args):
         # Optimizer
         args.optimizer = 'ADAM'
         args.lr = 0.0001
-        args.momentum = 0.9
-		# Multiply lr by gamma at 'decay' epochs
-        args.decay = '200'
+        args.lr_patience = 15
+        args.lr_max_updates = 6
         args.gamma = 0.5
+        args.momentum = 0.9
         args.weight_decay = 0
         args.betas = (0.9, 0.999)
         args.epsilon = 1e-8
@@ -72,7 +72,8 @@ def set_template(args):
         args.dir_data = '../../Data'
         args.data_train = 'DIV2K_TIFF'
         args.data_test = 'DIV2K_TIFF'
-        args.data_range = '1-800/801-825'
+        #args.data_range = '1-800/801-825'
+        args.data_range = '1-10/13-13'
         args.input_range = '-1., 1.'
         args.tensor_range = '-1., 1.'
         args.patch_size = 192 
@@ -86,8 +87,6 @@ def set_template(args):
         args.optimizer = 'ADAM'
         args.lr = 0.0001
         args.momentum = 0.9
-		# Multiply lr by gamma at 'decay' epochs
-        args.decay = '4-8'
         args.gamma = 0.5
         args.weight_decay = 0
         args.betas = (0.9, 0.999)
@@ -97,7 +96,7 @@ def set_template(args):
         args.data_train = 'DIV2K_jpeg'
         args.data_test = 'DIV2K_jpeg'
         args.epochs = 200
-        args.decay = '100'
+        #args.decay = '100'
 
     if args.template.find('EDSR_paper') >= 0:
         args.model = 'EDSR'
@@ -119,7 +118,7 @@ def set_template(args):
 
         args.batch_size = 20
         args.epochs = 1000
-        args.decay = '500'
+        #args.decay = '500'
         args.gamma = 0.1
         args.weight_decay = 1e-4
 
@@ -128,7 +127,7 @@ def set_template(args):
     if args.template.find('GAN') >= 0:
         args.epochs = 200
         args.lr = 5e-5
-        args.decay = '150'
+        #args.decay = '150'
 
     if args.template.find('RCAN') >= 0:
         args.model = 'RCAN'

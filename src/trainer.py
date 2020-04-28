@@ -20,11 +20,11 @@ class Trainer():
         self.model = my_model
         self.loss = my_loss
         self.optimizer = utility.make_optimizer(args, self.model)
-        self.step = 0
 
         if self.args.load != '':
             self.optimizer.load(ckp.dir, epoch=len(ckp.log))
 
+        self.step = self.optimizer.get_last_epoch() * args.test_every
         self.error_last = 1e8
 
     def train(self):
@@ -82,12 +82,10 @@ class Trainer():
 
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
-        self.optimizer.schedule()
 
     def test(self):
         torch.set_grad_enabled(False)
 
-        epoch = self.optimizer.get_last_epoch()
         self.ckp.write_log('\nEvaluation:')
         self.ckp.add_log(
             torch.zeros(1, len(self.loader_test), len(self.scale))
@@ -173,6 +171,9 @@ class Trainer():
                     )
                 )
 
+        if not self.args.test_only:
+            self.optimizer.schedule(avg_psnr)
+
         self.ckp.write_log('Forward: {:.2f}s\n'.format(timer_test.toc()))
         self.ckp.write_log('Saving...')
 
@@ -180,6 +181,7 @@ class Trainer():
             self.ckp.end_background()
 
         if not self.args.test_only:
+            epoch = self.optimizer.get_last_epoch()
             self.ckp.save(self, epoch, is_best=(best[1][0, 0] + 1 == epoch))
 
         self.ckp.write_log(
