@@ -41,10 +41,12 @@ def generate_and_save_data(params):
 parser = argparse.ArgumentParser(description='Reads parameters from JSON file, gerates data and saves them.')
 parser.add_argument('--json_file', type=str, default='parameters.json',
         help='File from which to read the parameters. Default: \'parameters.json\'')
-parser.add_argument('--save_dir', type=str, default='../../Data/Synthetic_Data',
+parser.add_argument('--save_dir', type=str, default='../../Data/Synthetic/Synthetic_train_HR',
         help="Directory in which to save generated data. Default: './Synthetic_Data'.")
 parser.add_argument('--view_only', action='store_true',
         help="Instead of saving all data, randomly select a parameter to generate and plot it.")
+parser.add_argument('--n_proc', type=int, default=None,
+        help='Number of processes to parallelize if not specified, uses CPU count.')
 
 args = parser.parse_args()
 
@@ -76,8 +78,8 @@ if args.view_only:
 
 start_time = time()
 
-n_proc = os.cpu_count() 
+n_proc = args.n_proc if args.n_proc is not None else os.cpu_count()
+print("\nParalelizando em {} processos\n.".format(n_proc))
 with Pool(n_proc) as p:
     p.map(generate_and_save_data, parameter_list)
-
-print("Tempo para geração de dados: {:.3f}s".format(time()-start_time))
+print("\nTempo para geração de dados: {:.3f}s\n".format(time()-start_time))
