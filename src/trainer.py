@@ -145,19 +145,6 @@ class Trainer():
                     if i in tb_img_idxs:
                         tb_imgs.append([sr, hr])
 
-                # TensorBoard log
-                self.ckp.tensorboard_images('Test', tb_imgs, self.step)
-                if not self.args.test_only:
-                    loss_dic = {'avg': avg_loss/len(d),
-                                'min': min_loss,
-                                'max': max_loss} 
-                    self.ckp.tensorboard_log('Loss/test', loss_dic, self.step)
-
-                    psnr_dic = {'avg': avg_psnr/len(d),
-                                'best': best_psnr,
-                                'worst': worst_psnr} 
-                    self.ckp.tensorboard_log('PSNR', psnr_dic, self.step)
-
                 # EDSR log
                 self.ckp.log[-1, idx_data, idx_scale] /= len(d)
                 best = self.ckp.log.max(0)
@@ -170,6 +157,22 @@ class Trainer():
                         best[1][idx_data, idx_scale] + 1
                     )
                 )
+
+                # TensorBoard log
+                # Só salva imagem se é melhor época até agora
+                epoch = self.optimizer.get_last_epoch()
+                if best[1][0, 0] == epoch:
+                    self.ckp.tensorboard_images('Test', tb_imgs, self.step)
+                if not self.args.test_only:
+                    loss_dic = {'avg': avg_loss/len(d),
+                                'min': min_loss,
+                                'max': max_loss} 
+                    self.ckp.tensorboard_log('Loss/test', loss_dic, self.step)
+
+                    psnr_dic = {'avg': avg_psnr/len(d),
+                                'best': best_psnr,
+                                'worst': worst_psnr} 
+                    self.ckp.tensorboard_log('PSNR', psnr_dic, self.step)
 
         if not self.args.test_only:
             self.optimizer.schedule(avg_psnr)

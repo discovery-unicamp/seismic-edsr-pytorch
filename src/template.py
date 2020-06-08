@@ -1,6 +1,52 @@
 
 def set_template(args):
     # My templates
+    if args.template.lower().find('edsr_synthetic') >= 0:
+        import sys
+        args.ext = 'img'
+
+        # If cpu was not explicitly set,
+        # set if available
+        if not '--cpu' in sys.argv:
+            from torch import cuda
+            if cuda.is_available():
+                args.cpu = False
+            else:
+                args.cpu = True
+
+        # Model
+        args.model = 'EDSR'
+        args.act = 'relu'
+        args.n_resblocks = 32
+        args.n_feats = 64 
+        args.res_scale = 1
+        args.shift_mean = False
+
+        # Data
+        args.dir_data = '../../Data'
+        args.data_train = 'Synthetic'
+        args.data_test = 'Synthetic'
+        args.data_range = '1-90/91-100'
+        args.input_range = '-1., 1.'
+        args.tensor_range = '-1., 1.'
+        args.patch_size = 192 
+        args.n_colors = 1
+
+        # Training
+        args.loss = '1*L1'
+        args.batch_size = 16
+
+        # Optimizer
+        args.optimizer = 'ADAM'
+        args.lr = 0.0001
+        args.lr_patience = 15
+        args.lr_max_updates = 6
+        args.gamma = 0.5
+        args.momentum = 0.9
+        args.weight_decay = 0
+        args.betas = (0.9, 0.999)
+        args.epsilon = 1e-8
+
     if args.template.lower().find('edsr_tiff') >= 0:
         import sys
         args.ext = 'img'
