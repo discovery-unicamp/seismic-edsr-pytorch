@@ -172,7 +172,7 @@ class Trainer():
                 )
 
         if not self.args.test_only:
-            self.optimizer.schedule(avg_psnr)
+            self.optimizer.schedule(avg_psnr/len(d))
 
         self.ckp.write_log('Forward: {:.2f}s\n'.format(timer_test.toc()))
         self.ckp.write_log('Saving...')

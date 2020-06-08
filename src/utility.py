@@ -339,6 +339,7 @@ def make_optimizer(args, target):
 
         def _register_scheduler(self, scheduler_class, **kwargs):
             self.scheduler = scheduler_class(self, **kwargs)
+            self.scheduler.last_epoch = 0
 
         def save(self, save_dir):
             torch.save(self.state_dict(), self.get_dir(save_dir, 'optimizer.pt'))
