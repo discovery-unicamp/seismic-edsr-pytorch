@@ -328,7 +328,7 @@ def make_optimizer(args, target):
     # scheduler
     kwargs_scheduler = {'mode': 'max', 'factor': args.gamma,
             'patience': args.lr_patience, 'verbose': True, 'threshold': 0.0001,
-            'threshold_mode': 'rel', 'cooldown': args.lr_patience,
+            'threshold_mode': 'rel', 'cooldown': 0,
             'min_lr': args.lr * (args.gamma ** args.lr_max_updates),
             'eps': 1e-08}
     scheduler_class = lrs.ReduceLROnPlateau

@@ -26,7 +26,7 @@ def set_template(args):
         args.dir_data = '../../Data'
         args.data_train = 'Synthetic'
         args.data_test = 'Synthetic'
-        args.data_range = '1-90/91-100'
+        args.data_range = '1-4000/4001-4200'
         args.input_range = '-1., 1.'
         args.tensor_range = '-1., 1.'
         args.patch_size = 192 

@@ -16,17 +16,19 @@
     #--reset \
 # python -m pdb main.py \
 
+SCALE=4
+
 python main.py \
     --resume -1 \
-    --load edsr_synthetic_X2 \
+    --load edsr_synthetic_X$SCALE \
     --tensorboard \
     --template edsr_synthetic \
-    --n_threads        6 \
+    --n_threads        12 \
     --seed             42 \
-    --save edsr_synthetic_X2 \
+    --save edsr_synthetic_X$SCALE \
     \
-    --scale '2' \
+    --scale $SCALE \
     \
-    --print_every 5 \
-    --test_every 10 \
-    --epochs 10 \
+    --print_every 50 \
+    --test_every 1000 \
+    --epochs 300 \
