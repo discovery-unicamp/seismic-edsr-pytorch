@@ -11,21 +11,27 @@
 
 #    --load toy_x2 \
 #    --save_results \
-#    --resume -1 \
 #    --test_only \
-    #--reset \
+#    --reset \
 #    --pre_train ../experiment/toy_tiff_X2/model/model_best.pt \
+#    --tensorboard \
 # python -m pdb main.py \
 
 python main.py \
+    --resume -1 \
     --tensorboard \
+    --port_tensorboard 7007 \
     --template TOY \
-    --n_threads        6 \
+    --n_threads        12 \
     --seed             42 \
-    --save toy_tiff_X4_nopre \
+    --load toy_tiff_test \
+    --save toy_tiff_test \
     \
     --scale '4' \
     \
-    --print_every 50 \
-    --test_every 1000 \
-    --epochs 12 \
+    --lr_patience 2 \
+    --lr_max_updates 6 \
+    \
+    --print_every 2 \
+    --test_every 20 \
+    --epochs 10 \
