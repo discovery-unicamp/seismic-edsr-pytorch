@@ -112,6 +112,7 @@ class checkpoint():
             tb_path = self.get_path(args.dir_tensorboard)
             tb = tensorboard.program.TensorBoard()
             tb.configure(argv=[None, '--logdir', tb_path, 
+                '--host', args.host_tensorboard,
                 '--port', args.port_tensorboard])
             url = tb.launch()
             print("TensorBoard launched at", url)

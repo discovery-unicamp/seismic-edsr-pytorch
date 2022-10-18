@@ -20,14 +20,14 @@
 python main.py \
     --resume -1 \
     --tensorboard \
-    --port_tensorboard 7007 \
+    --port_tensorboard 6006 \
     --template TOY \
     --n_threads        12 \
     --seed             42 \
     --load toy_tiff_test \
     --save toy_tiff_test \
     \
-    --scale '4' \
+    --scale '2' \
     \
     --lr_patience 2 \
     --lr_max_updates 6 \

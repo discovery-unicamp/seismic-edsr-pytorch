@@ -19,6 +19,8 @@ parser.add_argument('--dir_tensorboard', type=str, default='tensorboard',
                     help='Directory for TensorBoard logs.')
 parser.add_argument('--port_tensorboard', type=str, default='6006',
                     help='Port to run TensorBoard.')
+parser.add_argument('--host_tensorboard', type=str, default='0.0.0.0',
+                    help='Host to run TensorBoard.')
 
 # Hardware specifications
 parser.add_argument('--n_threads', type=int, default=6,
