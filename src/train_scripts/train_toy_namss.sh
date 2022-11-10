@@ -15,17 +15,18 @@
 #    --reset \
 #    --pre_train ../experiment/toy_tiff_X2/model/model_best.pt \
 #    --tensorboard \
-# python -m pdb main.py \
 
+#python -m pdb main.py \
 python main.py \
+    --reset \
     --resume -1 \
     --tensorboard \
     --port_tensorboard 6006 \
     --template TOY \
     --n_threads        12 \
     --seed             42 \
-    --load toy_tiff_test \
-    --save toy_tiff_test \
+    --load toy_namss_2x \
+    --save toy_namss_2x \
     \
     --scale '2' \
     \
