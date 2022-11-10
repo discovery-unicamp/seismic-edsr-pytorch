@@ -116,13 +116,15 @@ def set_template(args):
 
         # Data
         args.dir_data = '../../Data'
-        args.data_train = 'DIV2K_TIFF'
-        args.data_test = 'DIV2K_TIFF'
+        args.data_train = 'NAMSS'
+        args.data_test = 'NAMSS'
+        #args.data_train = 'DIV2K_TIFF'
+        #args.data_test = 'DIV2K_TIFF'
         #args.data_range = '1-800/801-825'
-        args.data_range = '1-10/13-13'
+        args.data_range = '1-10/1-2'
         args.input_range = '-1., 1.'
         args.tensor_range = '-1., 1.'
-        args.patch_size = 192 
+        args.patch_size = 96 
         args.n_colors = 1
 
         # Training
