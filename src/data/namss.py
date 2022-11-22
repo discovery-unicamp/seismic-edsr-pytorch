@@ -3,35 +3,10 @@ from data import srdata
 import numpy as np
 import imageio
 
-def _get_patch(*args, patch_size=96, scale=2, multi=False, input_large=False):
-    ih, iw = args[0].shape[:2]
-
-    if not input_large:
-        p = scale if multi else 1
-        tp = p * patch_size
-        ip = tp // scale
-    else:
-        tp = patch_size
-        ip = patch_size
-
-    ix = random.randrange(0, iw - ip + 1)
-    iy = random.randrange(0, ih - ip + 1)
-
-    if not input_large:
-        tx, ty = scale * ix, scale * iy
-    else:
-        tx, ty = ix, iy
-
-    ret = [
-        args[0][iy:iy + ip, ix:ix + ip],
-        *[a[ty:ty + tp, tx:tx + tp] for a in args[1:]]
-    ]
-
-    return ret
-
 class NAMSS(srdata.SRData):
     def __init__(self, args, name='NAMSS', train=True, benchmark=False):
         self.train = train
+        self.no_augment = args.no_augment
         data_range = [r.split('-') for r in args.data_range.split('/')]
         if train:
             data_range = data_range[0]
@@ -42,9 +17,15 @@ class NAMSS(srdata.SRData):
                 data_range = data_range[1]
 
         self.begin, self.end = list(map(lambda x: int(x), data_range))
+        args.no_augment = False
         super(NAMSS, self).__init__(
             args, name=name, train=train, benchmark=benchmark
         )
+
+    def get_patch(self, lr, hr):
+        lr, hr = super().get_patch(lr, hr)
+        if not self.no_augment: lr, hr = common.augment(lr, hr, hfilp=True, rot=False)
+        return lr, hr
 
     def _load_file(self, idx):
         idx = self._get_index(idx)
