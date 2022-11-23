@@ -25,7 +25,8 @@ python main.py \
     --load edsrX${SCALE}_$DATASET \
     --save edsrX${SCALE}_$DATASET \
     --tensorboard \
-    --n_threads        6 \
+    --n_threads        24 \
+    --n_GPUs		1 \
     --seed             42 \
     \
     --template EDSR_paper \
@@ -35,14 +36,13 @@ python main.py \
     --dir_data ../../Data \
     --data_train $DATASET \
     --data_test $DATASET \
-    --data_range '1-800/1-10' \
+    --data_range '1-800/1-25' \
     --input_range '-1., 1.' \
     --tensor_range '-1., 1.' \
     --ext img \
     --patch_size $PATCH_SIZE  \
     --n_colors 1 \
-    --no_augment \
     \
-    --print_every 10 \
-    --test_every 50 \
-    --epochs 5 \
+    --print_every 50 \
+    --test_every 1000 \
+    --epochs 300 \
