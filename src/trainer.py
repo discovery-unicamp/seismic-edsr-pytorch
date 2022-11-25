@@ -1,13 +1,14 @@
+import gc
 import os
 import math
 from decimal import Decimal
 from numpy import random
+from tqdm import tqdm
 
 import utility
 
 import torch
 import torch.nn.utils as utils
-from tqdm import tqdm
 
 class Trainer():
     def __init__(self, args, loader, my_model, my_loss, ckp):
@@ -83,6 +84,10 @@ class Trainer():
         self.loss.end_log(len(self.loader_train))
         self.error_last = self.loss.log[-1, -1]
 
+        # Memory cleanup after epoch
+        gc.collect()
+        torch.cuda.empty_cache()
+
     def test(self):
         torch.set_grad_enabled(False)
 
@@ -110,7 +115,8 @@ class Trainer():
                 # Draw image index to plot in TensorBoard
                 idx_size = min(self.args.tensorboard_nimgs, len(d))
                 tb_img_idxs = random.choice(len(d), size=idx_size, replace=False)
-                tb_img_idxs.sort()
+                if not self.args.tensorboard:
+                    tb_img_idxs = []
                 tb_imgs = []
 
                 for i, (lr, hr, filename) in enumerate(tqdm(d, ncols=80)):
@@ -143,7 +149,15 @@ class Trainer():
                         max_loss = loss if loss > max_loss else max_loss 
                         min_loss = loss if loss < min_loss else min_loss 
                     if i in tb_img_idxs:
-                        tb_imgs.append([sr, hr])
+                        tb_imgs.append([sr.cpu(), hr.cpu()])
+
+                    # Memory clean up
+                    del save_list
+                    del sr
+                    del hr
+                    del lr
+                    gc.collect()
+                    torch.cuda.empty_cache()
 
                 # EDSR log
                 self.ckp.log[-1, idx_data, idx_scale] /= len(d)
