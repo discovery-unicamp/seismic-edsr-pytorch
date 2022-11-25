@@ -1,11 +1,13 @@
-import os
-from data import srdata
 import numpy as np
-import imageio
+import os
+
+from data import srdata
+from data import common
+
 
 class NAMSS(srdata.SRData):
     def __init__(self, args, name='NAMSS', train=True, benchmark=False):
-        self.train = train
+        self.cache_data = args.cache_data
         self.no_augment = args.no_augment
         data_range = [r.split('-') for r in args.data_range.split('/')]
         if train:
@@ -24,7 +26,7 @@ class NAMSS(srdata.SRData):
 
     def get_patch(self, lr, hr):
         lr, hr = super().get_patch(lr, hr)
-        if not self.no_augment: lr, hr = common.augment(lr, hr, hfilp=True, rot=False)
+        if not self.no_augment: lr, hr = common.augment(lr, hr, hflip=True, rot=False)
         return lr, hr
 
     def _load_file(self, idx):
@@ -32,9 +34,10 @@ class NAMSS(srdata.SRData):
         f_hr = self.images_hr[idx]
         f_lr = self.images_lr[self.idx_scale][idx]
 
-        filename, _ = os.path.splitext(os.path.basename(f_hr))
-        hr = np.expand_dims(imageio.imread(f_hr), axis=2)
-        lr = np.expand_dims(imageio.imread(f_lr), axis=2)
+        if self.cache_data:
+            lr, hr, filename = common.load_and_cache_file(f_hr, f_lr)
+        else:
+            lr, hr, filename = common.load_file(f_hr, f_lr)
 
         return lr, hr, filename
 

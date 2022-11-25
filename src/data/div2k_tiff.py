@@ -1,11 +1,13 @@
-import os
-from data import srdata
 import numpy as np
-import imageio
-# import random
+import os
+
+from data import srdata
+from data import common
+
 
 class DIV2K_TIFF(srdata.SRData):
     def __init__(self, args, name='DIV2K_TIFF', train=True, benchmark=False):
+        self.cache_data = args.cache_data
         self.no_augment = args.no_augment
         data_range = [r.split('-') for r in args.data_range.split('/')]
         if train:
@@ -24,7 +26,7 @@ class DIV2K_TIFF(srdata.SRData):
 
     def get_patch(self, lr, hr):
         lr, hr = super().get_patch(lr, hr)
-        if not self.no_augment: lr, hr = common.augment(lr, hr, hfilp=True, rot=False)
+        if not self.no_augment: lr, hr = common.augment(lr, hr, hflip=True, rot=False)
         return lr, hr
 
     def _load_file(self, idx):
@@ -32,36 +34,12 @@ class DIV2K_TIFF(srdata.SRData):
         f_hr = self.images_hr[idx]
         f_lr = self.images_lr[self.idx_scale][idx]
 
-        filename, _ = os.path.splitext(os.path.basename(f_hr))
-        # if self.args.ext == 'img' or self.benchmark:
-        hr = np.expand_dims(imageio.imread(f_hr), axis=2)
-        lr = np.expand_dims(imageio.imread(f_lr), axis=2)
-        # elif self.args.ext.find('sep') >= 0:
-        #     with open(f_hr, 'rb') as _f:
-        #         hr = pickle.load(_f)
-        #     with open(f_lr, 'rb') as _f:
-        #         lr = pickle.load(_f)
+        if self.cache_data:
+            lr, hr, filename = common.load_and_cache_file(f_hr, f_lr)
+        else:
+            lr, hr, filename = common.load_file(f_hr, f_lr)
 
         return lr, hr, filename
-
-    # def get_patch(self, lr, hr):
-    #     scale = self.scale[self.idx_scale]
-    #     if self.train:
-    #         lr, hr = _get_patch(
-    #             lr, hr,
-    #             patch_size=self.args.patch_size,
-    #             scale=scale,
-    #             multi=(len(self.scale) > 1),
-    #             input_large=self.input_large
-    #         )
-    #         if not self.args.no_augment: lr, hr = common.augment(lr, hr)
-    #     else:
-    #         ih, iw = lr.shape[:2]
-    #         hr = hr[0:ih * scale, 0:iw * scale]
-    #
-    #     return lr, hr
-
-
 
     def _scan(self):
         names_hr, names_lr = super(DIV2K_TIFF, self)._scan()

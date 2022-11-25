@@ -1,9 +1,22 @@
-import random
-
+import imageio
 import numpy as np
+import os
+import random
 import skimage.color as sc
-
 import torch
+
+from functools import lru_cache
+
+@lru_cache(maxsize=None)
+def load_and_cache_file(f_hr, f_lr):
+    return load_file(f_hr, f_lr)
+
+def load_file(f_hr, f_lr):
+    filename, _ = os.path.splitext(os.path.basename(f_hr))
+    hr = np.expand_dims(imageio.imread(f_hr), axis=2)
+    lr = np.expand_dims(imageio.imread(f_lr), axis=2)
+
+    return lr, hr, filename
 
 def get_patch(*args, patch_size=96, scale=2, multi=False, input_large=False):
     ih, iw = args[0].shape[:2]

@@ -33,6 +33,8 @@ parser.add_argument('--seed', type=int, default=1,
                     help='random seed')
 
 # Data specifications
+parser.add_argument('--cache_data', action='store_true',
+                    help='Cache data to RAM.')
 parser.add_argument('--input_range', type=str, default='0,255',
                     help=('Minimum and maximum possible values of the input signal,'
                     'separated by a comma. Ex: RGB range is typically "0,255".'))
@@ -164,6 +166,14 @@ parser.add_argument('--save_gt', action='store_true',
 
 args = parser.parse_args()
 template.set_template(args)
+
+if args.cache_data and args.n_threads != 0:
+    import sys
+    sys.exit("When using --cache_data, --n_threds must be set to 0 to avoid multiple copies of the whole dataset being loaded to RAM. Exiting.")
+
+# No need to chache data that will be read only once
+if args.test_only:
+    args.cache_data = False
 
 args.scale = list(map(lambda x: int(x), args.scale.split('+')))
 args.input_range = [float(x) for x in args.input_range.split(',')]
