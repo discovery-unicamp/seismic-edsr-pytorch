@@ -61,7 +61,7 @@ class checkpoint():
         else:
             self.dir = os.path.join('..', 'experiment', args.load)
 
-        if args.reset:
+        if args.reset and os.path.exists(self.dir):
             if input("--reset option will erase {}. Continue? (y/N): ".
                     format(self.dir)).lower() == 'y':
                 os.system('rm -rf ' + self.dir)

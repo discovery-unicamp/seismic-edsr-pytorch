@@ -1,5 +1,7 @@
 import argparse
 import template
+import torch
+import sys
 
 parser = argparse.ArgumentParser(description='EDSR and MDSR')
 
@@ -11,7 +13,7 @@ parser.add_argument('--template', default='.',
 # TensorBoard
 parser.add_argument('--tensorboard', action='store_true',
                     help='Uses TensorBoard to visualize training.')
-parser.add_argument('--tensorboard_nimgs', type=int, default=5,
+parser.add_argument('--tensorboard_nimgs', type=int, default=2,
                     help='Number of images to plot in TensorBoard during test.')
 parser.add_argument('--tensorboard_color', type=str, default='gray',
                     help='Color to plot images in TensorBoard.')
@@ -50,7 +52,7 @@ parser.add_argument('--data_test', type=str, default='DIV2K',
                     help='test dataset name')
 parser.add_argument('--data_range', type=str, default='1-800/801-810',
                     help='train/test data range')
-parser.add_argument('--ext', type=str, default='sep',
+parser.add_argument('--ext', type=str, default='img',
                     help='dataset file extension')
 parser.add_argument('--scale', type=str, default='4',
                     help='super resolution scale')
@@ -116,8 +118,6 @@ parser.add_argument('--self_ensemble', action='store_true',
                     help='use self-ensemble method for test')
 parser.add_argument('--test_only', action='store_true',
                     help='set this option to test the model')
-parser.add_argument('--gan_k', type=int, default=1,
-                    help='k value for adversarial loss')
 
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4,
@@ -147,6 +147,8 @@ parser.add_argument('--loss', type=str, default='1*L1',
                     help='loss function configuration')
 parser.add_argument('--skip_threshold', type=float, default='1e8',
                     help='skipping batch that has large error')
+parser.add_argument('--gan_k', type=int, default=1,
+                    help='k value for adversarial loss')
 
 # Log specifications
 parser.add_argument('--save', type=str, default='test',
@@ -165,7 +167,6 @@ parser.add_argument('--save_gt', action='store_true',
                     help='save low-resolution and high-resolution images together')
 
 args = parser.parse_args()
-template.set_template(args)
 
 if args.cache_data and args.n_threads != 0:
     import sys
@@ -175,11 +176,22 @@ if args.cache_data and args.n_threads != 0:
 if args.test_only:
     args.cache_data = False
 
+# Set CPU to True if no GPU available
+if not torch.cuda.is_available():
+    args.cpu = True
+
+# Automatically set all available GPUs, unless --n_GPUs was explicitly set
+if not args.cpu:
+    if not '--n_GPUs' in sys.argv:
+        args.n_GPUs = torch.cuda.device_count()
+
 args.scale = list(map(lambda x: int(x), args.scale.split('+')))
 args.input_range = [float(x) for x in args.input_range.split(',')]
 args.tensor_range = [float(x) for x in args.tensor_range.split(',')]
 args.data_train = args.data_train.split('+')
 args.data_test = args.data_test.split('+')
+
+template.set_template(args)
 
 if args.epochs == 0:
     args.epochs = 1e8
