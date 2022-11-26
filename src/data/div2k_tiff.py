@@ -19,7 +19,7 @@ class DIV2K_TIFF(srdata.SRData):
                 data_range = data_range[1]
 
         self.begin, self.end = list(map(lambda x: int(x), data_range))
-        args.no_augment = False
+        args.no_augment = True
         super(DIV2K_TIFF, self).__init__(
             args, name=name, train=train, benchmark=benchmark
         )
