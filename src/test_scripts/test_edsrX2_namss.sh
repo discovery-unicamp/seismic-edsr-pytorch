@@ -1,3 +1,4 @@
+# Test your own images
 # Para carregar imagens, usar --ext img
 
 # Parameters:
@@ -13,27 +14,31 @@
 #    --resume -1 \
 #    --test_only \
 #    --reset \
+#    --debug \
 
 SCALE=2
-DATASET=DIV2K_TIFF
+DATASET=NAMSS
 PATCH_SIZE=$(( 48*SCALE ))
+DATA_RANGE='1-2746/1-350'
 
-#python main.py \
-python -m pdb main.py \
+# Obs: the resume=0 and pre_train arguments allows to test with the best model instead of the latest
+    #--load edsrX${SCALE}_$DATASET \
+    #--save edsrX${SCALE}_$DATASET \
+    #--resume 0 \
+    #--pre_train "../experiment/edsrX${SCALE}_$DATASET/model/model_best.pt" \
+python main.py \
     --test_only \
     \
     --template EDSR_paper \
     --scale $SCALE \
-    --shift_mean False \
-    --n_threads 0 \
     \
     --dir_data ../../Data \
     --data_train $DATASET \
     --data_test $DATASET \
-    --data_range '1-800/1-10' \
+    --data_range $DATA_RANGE \
     --input_range '-1., 1.' \
     --tensor_range '-1., 1.' \
     --ext img \
-    --patch_size $PATCH_SIZE  \
     --n_colors 1 \
-    --no_augment \
+    \
+    --epochs 0 \

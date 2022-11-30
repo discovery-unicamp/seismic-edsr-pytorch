@@ -7,42 +7,42 @@
 # - model
 # - data
 # - training
-# - optimizer
 
-#    --load toy_x2 \
 #    --save_results \
 #    --resume -1 \
 #    --test_only \
+#    --debug \
 #    --reset \
 
 SCALE=2
-DATASET=DIV2K_TIFF
-PATCH_SIZE=$(( 48*SCALE ))
+DATASET=NAMSS
+SEED=2042
+TEMPLATE=EDSR_paper
+DATA_RANGE='1-2746/1-70'
+TEST_EVERY=1030
+
 
 python main.py \
-    --reset \
-    --resume -1 \
     --load edsrX${SCALE}_$DATASET \
     --save edsrX${SCALE}_$DATASET \
+    --n_threads 0 \
+    --seed $SEED \
     --tensorboard \
-    --n_threads        24 \
-    --n_GPUs		1 \
-    --seed             42 \
     \
-    --template EDSR_paper \
+    --template $TEMPLATE \
     --scale $SCALE \
     --shift_mean False \
     \
+    --cache_data \
     --dir_data ../../Data \
     --data_train $DATASET \
     --data_test $DATASET \
-    --data_range '1-800/1-25' \
+    --data_range $DATA_RANGE \
     --input_range '-1., 1.' \
     --tensor_range '-1., 1.' \
     --ext img \
-    --patch_size $PATCH_SIZE  \
     --n_colors 1 \
     \
     --print_every 50 \
-    --test_every 1000 \
+    --test_every $TEST_EVERY \
     --epochs 300 \

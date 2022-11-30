@@ -16,24 +16,20 @@
 
 SCALE=2
 DATASET=DIV2K_TIFF
-#DATASET=NAMSS
-
-# Set data_range based on the dataset
-if [ "$DATASET" = "DIV2K_TIFF" ]; then
-	DATA_RANGE='1-800/1-20'
-elif [ "$DATASET" = "NAMSS" ]; then
-	DATA_RANGE='1-2000/1-50'
-fi
+SEED=4226
+TEMPLATE=EDSR_paper
+DATA_RANGE='1-800/1-20'
+TEST_EVERY=1000
 
 
 python main.py \
     --load edsrX${SCALE}_$DATASET \
     --save edsrX${SCALE}_$DATASET \
-    --n_threads        0 \
-    --seed             4226 \
+    --n_threads 0 \
+    --seed $SEED \
     --tensorboard \
     \
-    --template EDSR_paper \
+    --template $TEMPLATE \
     --scale $SCALE \
     --shift_mean False \
     \
@@ -48,5 +44,5 @@ python main.py \
     --n_colors 1 \
     \
     --print_every 50 \
-    --test_every 1000 \
+    --test_every $TEST_EVERY \
     --epochs 300 \
