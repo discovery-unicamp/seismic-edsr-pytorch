@@ -2,7 +2,6 @@ import imageio
 import numpy as np
 import os
 import random
-import skimage.color as sc
 import torch
 
 from functools import lru_cache
@@ -17,6 +16,18 @@ def load_file(f_hr, f_lr):
     lr = np.expand_dims(imageio.imread(f_lr), axis=2)
 
     return lr, hr, filename
+
+# Based on the rgb2ycbcr function from Scikit-Image:
+# https://scikit-image.org/docs/stable/api/skimage.color.html#skimage.color.rgb2ycbcr
+def get_luminance(rgb_img):
+    ycbcr_from_rgb = np.array([[    65.481,   128.553,    24.966],
+                               [   -37.797,   -74.203,   112.0  ],
+                               [   112.0  ,   -93.786,   -18.214]])
+
+    rgb_img /= 255.
+    rgb_img = rgb_img @ ycbcr_from_rgb.T.astype(rgb_img.dtype)
+    luminance =  rgb_img[..., 0] + 16
+    return luminance
 
 def get_patch(*args, patch_size=96, scale=2, multi=False, input_large=False):
     ih, iw = args[0].shape[:2]
@@ -51,7 +62,7 @@ def set_channel(*args, n_channels=3):
 
         c = img.shape[2]
         if n_channels == 1 and c == 3:
-            img = np.expand_dims(sc.rgb2ycbcr(img)[:, :, 0], 2)
+            img = np.expand_dims(get_luminance(img), 2)
         elif n_channels == 3 and c == 1:
             img = np.concatenate([img] * n_channels, 2)
 
