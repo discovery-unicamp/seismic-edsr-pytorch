@@ -74,6 +74,28 @@ def set_template(args):
         args.lr = 5e-5
         #args.decay = '150'
 
+    if args.template.find('RDN') >= 0:
+        # Model
+        args.model = 'RDN'
+        args.G0 = 64
+        args.RDNkSize = 3
+        args.RDNconfig = 'B'
+
+        # Training
+        args.loss = '1*L1'
+        args.batch_size = 16
+        args.patch_size = 32 * args.scale[-1]
+
+        ## Optimizer
+        args.optimizer = 'ADAM'
+        args.betas = (0.9, 0.999)
+        args.epsilon = 1e-8
+
+        args.lr = 0.0001
+        args.lr_patience = 15
+        args.lr_max_updates = 6
+        args.gamma = 0.5
+
     if args.template.find('RCAN') >= 0:
         args.model = 'RCAN'
         args.n_resgroups = 10
