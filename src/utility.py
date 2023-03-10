@@ -50,10 +50,6 @@ class checkpoint():
         self.log = torch.Tensor()
         now = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
 
-        if args.resume and os.path.exists(
-                os.path.join('..', 'experiment', args.save)):
-            args.load = args.save
-
         if not args.load:
             if not args.save:
                 args.save = now
@@ -74,8 +70,6 @@ class checkpoint():
         if os.path.exists(self.dir) and args.load:
             self.log = torch.load(self.get_path('psnr_log.pt'))
             print('Continue from epoch {}...'.format(len(self.log)+1))
-            if not args.resume:
-                args.resume = -1
         else:
             args.resume = 0
             args.load = ''
@@ -109,11 +103,11 @@ class checkpoint():
                 sys.exit()
 
             # Launch TensorBoard and create writer
-            tb_path = self.get_path(args.dir_tensorboard)
+            tb_path = self.get_path(args.tensorboard_dir)
             tb = tensorboard.program.TensorBoard()
             tb.configure(argv=[None, '--logdir', tb_path, 
-                '--host', args.host_tensorboard,
-                '--port', args.port_tensorboard])
+                '--host', args.tensorboard_host,
+                '--port', args.tensorboard_port])
             url = tb.launch()
             print("TensorBoard launched at", url)
                       
@@ -187,7 +181,7 @@ class checkpoint():
 
     def done(self):
         self.log_file.close()
-        if self.args.tensorboard:
+        if self.args.tensorboard and self.args.tensorboard_keep_alive:
             import signal
             import sys
             original_sigint = signal.getsignal(signal.SIGINT)

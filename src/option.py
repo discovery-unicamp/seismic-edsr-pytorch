@@ -13,15 +13,17 @@ parser.add_argument('--template', default='.',
 # TensorBoard
 parser.add_argument('--tensorboard', action='store_true',
                     help='Uses TensorBoard to visualize training.')
+parser.add_argument('--tensorboard_keep_alive', action='store_true',
+                    help='Do not exit after training, keeps program running.')
 parser.add_argument('--tensorboard_nimgs', type=int, default=2,
                     help='Number of images to plot in TensorBoard during test.')
 parser.add_argument('--tensorboard_color', type=str, default='gray',
                     help='Color to plot images in TensorBoard.')
-parser.add_argument('--dir_tensorboard', type=str, default='tensorboard',
+parser.add_argument('--tensorboard_dir', type=str, default='tensorboard',
                     help='Directory for TensorBoard logs.')
-parser.add_argument('--port_tensorboard', type=str, default='6006',
+parser.add_argument('--tensorboard_port', type=str, default='6006',
                     help='Port to run TensorBoard.')
-parser.add_argument('--host_tensorboard', type=str, default='0.0.0.0',
+parser.add_argument('--tensorboard_host', type=str, default='0.0.0.0',
                     help='Host to run TensorBoard.')
 
 # Hardware specifications
@@ -190,6 +192,9 @@ args.input_range = [float(x) for x in args.input_range.split(',')]
 args.tensor_range = [float(x) for x in args.tensor_range.split(',')]
 args.data_train = args.data_train.split('+')
 args.data_test = args.data_test.split('+')
+
+# Maybe latter change code that needs this value
+args.rgb_range = args.input_range[1] - args.input_range[0]
 
 template.set_template(args)
 
