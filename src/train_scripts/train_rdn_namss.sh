@@ -1,6 +1,3 @@
-# Test your own images
-# Para carregar imagens, usar --ext img
-
 # Parameters:
 #
 # - program execution
@@ -8,24 +5,22 @@
 # - data
 # - training
 
-#    --save_results \
 #    --resume -1 \
-#    --test_only \
 #    --debug \
 #    --reset \
 
-SCALE=2
-DATASET=DIV2K_TIFF
-SEED=5946
 TEMPLATE=RDN
-MODEL=RDN
-DATA_RANGE='1-800/1-20'
-TEST_EVERY=1000
+SCALE=2
+SEED=5946
+DATASET=NAMSS
+DATA_RANGE='1-2746/1-70'
+TEST_EVERY=1030
 
+EXPERIMENT_DIR=${TEMPLATE}-X${SCALE}-$DATASET-Seed${SEED}
 
 python main.py \
-    --load ${MODEL}-X${SCALE}-$DATASET-Seed${SEED} \
-    --save ${MODEL}-X${SCALE}-$DATASET-Seed${SEED} \
+    --load $EXPERIMENT_DIR \
+    --save $EXPERIMENT_DIR \
     --n_threads 0 \
     --seed $SEED \
     --tensorboard \

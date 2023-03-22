@@ -18,23 +18,25 @@ SCALE=2
 DATASET=DIV2K_TIFF
 SEED=5946
 TEMPLATE=RDN
-MODEL=RDN
-DATA_RANGE='1-800/1-20'
-TEST_EVERY=1000
+DATA_RANGE='1-800/1-50'
 
+EXPERIMENT_DIR=${TEMPLATE}-X${SCALE}-$DATASET-Seed${SEED}
 
+# Obs: the resume=0 and pre_train arguments allows to test with the best model instead of the latest
 python main.py \
-    --load ${MODEL}-X${SCALE}-$DATASET-Seed${SEED} \
-    --save ${MODEL}-X${SCALE}-$DATASET-Seed${SEED} \
+    --test_only \
+    --save_results \
+    --load $EXPERIMENT_DIR \
+    --save $EXPERIMENT_DIR \
+    --resume 0 \
+    --pre_train "../experiment/$EXPERIMENT_DIR/model/model_best.pt" \
     --n_threads 0 \
     --seed $SEED \
-    --tensorboard \
     \
     --template $TEMPLATE \
     --scale $SCALE \
     --shift_mean False \
     \
-    --cache_data \
     --dir_data ../../Data \
     --data_train $DATASET \
     --data_test $DATASET \
@@ -44,6 +46,4 @@ python main.py \
     --ext img \
     --n_colors 1 \
     \
-    --print_every 50 \
-    --test_every $TEST_EVERY \
-    --epochs 220 \
+    --epochs 0 \
