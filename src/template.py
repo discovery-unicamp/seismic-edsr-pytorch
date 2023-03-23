@@ -55,19 +55,28 @@ def set_template(args):
         args.epochs = 650
 
     if args.template.find('DDBPN') >= 0:
+        # Model
         args.model = 'DDBPN'
-        args.patch_size = 128
-        args.scale = [4]
 
-        args.data_test = 'Set5'
-
+        # Training
+        args.loss = '1*MSE'
         args.batch_size = 20
-        args.epochs = 1000
-        #args.decay = '500'
-        args.gamma = 0.1
+        args.patch_size = 32 * args.scale[-1]
+
+        ## Optimizer
+        args.optimizer = 'ADAM'
+        args.betas = (0.9, 0.999)
+        args.epsilon = 1e-8
         args.weight_decay = 1e-4
 
-        args.loss = '1*MSE'
+        args.lr = 0.0001
+        args.lr_patience = 20
+        args.lr_max_updates = 6
+        args.gamma = 0.5
+
+        #args.epochs = 1000
+        #args.decay = '500'
+        #args.gamma = 0.1
 
     if args.template.find('GAN') >= 0:
         args.epochs = 200
