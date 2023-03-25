@@ -1,6 +1,3 @@
-# Test your own images
-# Para carregar imagens, usar --ext img
-
 # Parameters:
 #
 # - program execution
@@ -8,9 +5,7 @@
 # - data
 # - training
 
-#    --save_results \
 #    --resume -1 \
-#    --test_only \
 #    --debug \
 #    --reset \
 
@@ -19,9 +14,16 @@ SEED=
 TEMPLATE=
 EPOCHS=
 
+# DIV2K parameters
 DATASET=DIV2K_TIFF
 DATA_RANGE='1-800/1-20'
 TEST_EVERY=1000
+
+# NAMSS parameters
+DATASET=NAMSS
+DATA_RANGE='1-2746/1-70'
+TEST_EVERY=1030
+
 EXPERIMENT_DIR=${TEMPLATE}-X${SCALE}-$DATASET-Seed${SEED}
 
 python main.py \
