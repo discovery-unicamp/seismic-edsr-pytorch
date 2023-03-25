@@ -99,6 +99,14 @@ parser.add_argument('--RDNkSize', type=int, default=3,
 parser.add_argument('--RDNconfig', type=str, default='B',
                     help='parameters config of RDN. (Use in RDN)')
 
+# Option for WDSR
+parser.add_argument('--r_mean', type=float, default=0.4488,
+                    help='Mean of R Channel')
+parser.add_argument('--g_mean', type=float, default=0.4371,
+                    help='Mean of G channel')
+parser.add_argument('--b_mean', type=float, default=0.4040,
+                    help='Mean of B channel')
+
 # Option for Residual channel attention network (RCAN)
 parser.add_argument('--n_resgroups', type=int, default=10,
                     help='number of residual groups')
