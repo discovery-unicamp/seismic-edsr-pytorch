@@ -128,11 +128,29 @@ def set_template(args):
         args.gamma = 0.5
 
     if args.template.find('RCAN') >= 0:
+        # Model
         args.model = 'RCAN'
         args.n_resgroups = 10
         args.n_resblocks = 20
         args.n_feats = 64
-        args.chop = True
+        args.reduction = 16
+        args.res_scale = 1
+        #args.chop = True
+
+        # Training
+        args.loss = '1*L1'
+        args.batch_size = 16
+        args.patch_size = 48 * args.scale[-1]
+
+        # Optimizer
+        args.optimizer = 'ADAM'
+        args.betas = (0.9, 0.999)
+        args.epsilon = 1e-8
+
+        args.lr = 0.0001
+        args.lr_patience = 20
+        args.lr_max_updates = 6
+        args.gamma = 0.5
 
     if args.template.find('VDSR') >= 0:
         args.model = 'VDSR'

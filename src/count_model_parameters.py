@@ -10,6 +10,7 @@ models = [
     'DDBPN',
     'RCAN',
     'RDN',
+    'WDSR',
 ]
 
 args.cpu = True
