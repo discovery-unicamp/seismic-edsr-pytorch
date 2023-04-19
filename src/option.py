@@ -161,6 +161,8 @@ parser.add_argument('--gan_k', type=int, default=1,
                     help='k value for adversarial loss')
 
 # Log specifications
+parser.add_argument('--experiment_dir', type=str, default='experiment',
+                    help='base experiments directory. Default: experiment')
 parser.add_argument('--save', type=str, default='test',
                     help='file name to save')
 parser.add_argument('--load', type=str, default='',

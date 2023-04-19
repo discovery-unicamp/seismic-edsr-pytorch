@@ -7,30 +7,44 @@
 # - model
 # - data
 # - training
-# - optimizer
 
-#    --load toy_x2 \
 #    --save_results \
 #    --resume -1 \
 #    --test_only \
-#    --reset \
 #    --debug \
+#    --reset \
 
 SCALE=2
+SEED=2042
+TEMPLATE=EDSR_paper
+
+# DIV2K parameters
+DATASET=DIV2K_TIFF
+DATA_RANGE='1-800/1-50'
+
+# NAMSS parameters
 DATASET=NAMSS
-PATCH_SIZE=$(( 48*SCALE ))
 DATA_RANGE='1-2746/1-350'
 
+EXPERIMENT_DIR=experiment-01
+MODEL_DIR=${TEMPLATE}-X${SCALE}-$DATASET-Seed${SEED}
+
 # Obs: the resume=0 and pre_train arguments allows to test with the best model instead of the latest
-    #--load edsrX${SCALE}_$DATASET \
-    #--save edsrX${SCALE}_$DATASET \
-    #--resume 0 \
-    #--pre_train "../experiment/edsrX${SCALE}_$DATASET/model/model_best.pt" \
 python main.py \
     --test_only \
+    --save_results \
+    --experiment_dir $EXPERIMENT_DIR \
+    --load $MODEL_DIR \
+    --save $MODEL_DIR \
+    --resume 0 \
+    --pre_train "../$EXPERIMENT_DIR/$MODEL_DIR/model/model_best.pt" \
+    --n_threads 0 \
+    --n_GPUs 1 \
+    --seed $SEED \
     \
-    --template EDSR_paper \
+    --template $TEMPLATE \
     --scale $SCALE \
+    --shift_mean False \
     \
     --dir_data ../../Data \
     --data_train $DATASET \

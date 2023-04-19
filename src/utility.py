@@ -53,9 +53,9 @@ class checkpoint():
         if not args.load:
             if not args.save:
                 args.save = now
-            self.dir = os.path.join('..', 'experiment', args.save)
+            self.dir = os.path.join('..', args.experiment_dir, args.save)
         else:
-            self.dir = os.path.join('..', 'experiment', args.load)
+            self.dir = os.path.join('..', args.experiment_dir, args.load)
 
         if args.reset and os.path.exists(self.dir):
             if input("--reset option will erase {}. Continue? (y/N): ".
