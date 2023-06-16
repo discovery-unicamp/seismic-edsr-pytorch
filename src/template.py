@@ -57,6 +57,13 @@ def set_template(args):
     if args.template.find('DDBPN') >= 0:
         # Model
         args.model = 'DDBPN'
+        args.n0 = 256
+        args.nr = 64
+        args.T = 7
+        # For DBPN-L
+        #args.n0 = 128
+        #args.nr = 32
+        #args.T = 6
 
         # Training
         args.loss = '1*MSE'
@@ -73,10 +80,6 @@ def set_template(args):
         args.lr_patience = 20
         args.lr_max_updates = 6
         args.gamma = 0.5
-
-        #args.epochs = 1000
-        #args.decay = '500'
-        #args.gamma = 0.1
 
     if args.template.find('GAN') >= 0:
         args.epochs = 200

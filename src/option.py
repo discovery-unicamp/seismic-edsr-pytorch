@@ -91,7 +91,15 @@ parser.add_argument('--precision', type=str, default='single',
                     choices=('single', 'half'),
                     help='FP precision for test (single | half)')
 
-# Option for Residual dense network (RDN)
+# Option for Deep Back-Projection Networks (DBPN)
+parser.add_argument('--n0', type=int, default=256,
+                    help='DDBPN: number of filters used in the initial LR features extraction.')
+parser.add_argument('--nr', type=int, default=64,
+                    help='DDBPN: number of filters used in each projection unit.')
+parser.add_argument('--T', type=int, default=7,
+                    help='DDBPN: number of stages (up and down projection units) in the network.')
+
+# Option for Residual Dense Network (RDN)
 parser.add_argument('--G0', type=int, default=64,
                     help='default number of filters. (Use in RDN)')
 parser.add_argument('--RDNkSize', type=int, default=3,

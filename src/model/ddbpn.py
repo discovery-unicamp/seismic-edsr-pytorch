@@ -70,9 +70,9 @@ class DDBPN(nn.Module):
         super(DDBPN, self).__init__()
         scale = args.scale[0]
 
-        n0 = 128
-        nr = 32
-        self.depth = 6
+        n0 = args.n0
+        nr = args.nr
+        self.depth = args.T
 
         rgb_mean = (0.4488, 0.4371, 0.4040)
         rgb_std = (1.0, 1.0, 1.0)
