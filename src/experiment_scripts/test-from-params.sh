@@ -33,5 +33,6 @@ python main.py \
     --tensor_range '-1., 1.' \
     --ext img \
     --n_colors 1 \
+    --no_augment \
     \
     --epochs 0 \

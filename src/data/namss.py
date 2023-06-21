@@ -8,7 +8,7 @@ from data import common
 class NAMSS(srdata.SRData):
     def __init__(self, args, name='NAMSS', train=True, benchmark=False):
         self.cache_data = args.cache_data
-        self.no_augment = args.no_augment
+        self.no_augment = args.no_augment if train else True
         data_range = [r.split('-') for r in args.data_range.split('/')]
         if train:
             data_range = data_range[0]
