@@ -60,24 +60,21 @@ def set_template(args):
         args.n0 = 256
         args.nr = 64
         args.T = 7
-        # For DBPN-L
-        #args.n0 = 128
-        #args.nr = 32
-        #args.T = 6
+        args.chop = True
 
         # Training
-        args.loss = '1*MSE'
-        args.batch_size = 20
-        args.patch_size = 32 * args.scale[-1]
+        args.loss = '1*L1'
+        args.batch_size = 16
+        args.patch_size = 40 * args.scale[-1]
 
         ## Optimizer
         args.optimizer = 'ADAM'
         args.betas = (0.9, 0.999)
         args.epsilon = 1e-8
-        args.weight_decay = 1e-4
+        args.weight_decay = 0
 
         args.lr = 0.0001
-        args.lr_patience = 20
+        args.lr_patience = 15
         args.lr_max_updates = 6
         args.gamma = 0.5
 

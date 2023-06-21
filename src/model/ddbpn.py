@@ -1,131 +1,228 @@
-# Deep Back-Projection Networks For Super-Resolution
-# https://arxiv.org/abs/1803.02735
-
-from model import common
-
 import torch
 import torch.nn as nn
 
 
 def make_model(args, parent=False):
-    return DDBPN(args)
+    return DDBPN(num_channels=args.n_colors, base_filter=args.nr, feat=args.n0, num_stages=args.T, scale_factor=args.scale[0])
 
-def projection_conv(in_channels, out_channels, scale, up=True):
-    kernel_size, stride, padding = {
-        2: (6, 2, 2),
-        4: (8, 4, 2),
-        8: (12, 8, 2)
-    }[scale]
-    if up:
-        conv_f = nn.ConvTranspose2d
-    else:
-        conv_f = nn.Conv2d
-
-    return conv_f(
-        in_channels, out_channels, kernel_size,
-        stride=stride, padding=padding
-    )
-
-class DenseProjection(nn.Module):
-    def __init__(self, in_channels, nr, scale, up=True, bottleneck=True):
-        super(DenseProjection, self).__init__()
-        if bottleneck:
-            self.bottleneck = nn.Sequential(*[
-                nn.Conv2d(in_channels, nr, 1),
-                nn.PReLU(nr)
-            ])
-            inter_channels = nr
-        else:
-            self.bottleneck = None
-            inter_channels = in_channels
-
-        self.conv_1 = nn.Sequential(*[
-            projection_conv(inter_channels, nr, scale, up),
-            nn.PReLU(nr)
-        ])
-        self.conv_2 = nn.Sequential(*[
-            projection_conv(nr, inter_channels, scale, not up),
-            nn.PReLU(inter_channels)
-        ])
-        self.conv_3 = nn.Sequential(*[
-            projection_conv(inter_channels, nr, scale, up),
-            nn.PReLU(nr)
-        ])
-
-    def forward(self, x):
-        if self.bottleneck is not None:
-            x = self.bottleneck(x)
-
-        a_0 = self.conv_1(x)
-        b_0 = self.conv_2(a_0)
-        e = b_0.sub(x)
-        a_1 = self.conv_3(e)
-
-        out = a_0.add(a_1)
-
-        return out
 
 class DDBPN(nn.Module):
-    def __init__(self, args):
+    def __init__(self, num_channels, base_filter, feat, num_stages, scale_factor):
         super(DDBPN, self).__init__()
-        scale = args.scale[0]
-
-        n0 = args.n0
-        nr = args.nr
-        self.depth = args.T
-
-        rgb_mean = (0.4488, 0.4371, 0.4040)
-        rgb_std = (1.0, 1.0, 1.0)
-        self.sub_mean = common.MeanShift(args.rgb_range, rgb_mean, rgb_std)
-        initial = [
-            nn.Conv2d(args.n_colors, n0, 3, padding=1),
-            nn.PReLU(n0),
-            nn.Conv2d(n0, nr, 1),
-            nn.PReLU(nr)
-        ]
-        self.initial = nn.Sequential(*initial)
-
-        self.upmodules = nn.ModuleList()
-        self.downmodules = nn.ModuleList()
-        channels = nr
-        for i in range(self.depth):
-            self.upmodules.append(
-                DenseProjection(channels, nr, scale, True, i > 1)
-            )
-            if i != 0:
-                channels += nr
         
-        channels = nr
-        for i in range(self.depth - 1):
-            self.downmodules.append(
-                DenseProjection(channels, nr, scale, False, i != 0)
-            )
-            channels += nr
+        if scale_factor == 2:
+        	kernel = 6
+        	stride = 2
+        	padding = 2
+        elif scale_factor == 4:
+        	kernel = 8
+        	stride = 4
+        	padding = 2
+        elif scale_factor == 8:
+        	kernel = 12
+        	stride = 8
+        	padding = 2
+        
+        #Initial Feature Extraction
+        self.feat0 = ConvBlock(num_channels, feat, 3, 1, 1, activation='prelu', norm=None)
+        self.feat1 = ConvBlock(feat, base_filter, 1, 1, 0, activation='prelu', norm=None)
+        #Back-projection stages
+        self.up1 = UpBlock(base_filter, kernel, stride, padding)
+        self.down1 = DownBlock(base_filter, kernel, stride, padding)
+        self.up2 = UpBlock(base_filter, kernel, stride, padding)
+        self.down2 = D_DownBlock(base_filter, kernel, stride, padding, 2)
+        self.up3 = D_UpBlock(base_filter, kernel, stride, padding, 2)
+        self.down3 = D_DownBlock(base_filter, kernel, stride, padding, 3)
+        self.up4 = D_UpBlock(base_filter, kernel, stride, padding, 3)
+        self.down4 = D_DownBlock(base_filter, kernel, stride, padding, 4)
+        self.up5 = D_UpBlock(base_filter, kernel, stride, padding, 4)
+        self.down5 = D_DownBlock(base_filter, kernel, stride, padding, 5)
+        self.up6 = D_UpBlock(base_filter, kernel, stride, padding, 5)
+        self.down6 = D_DownBlock(base_filter, kernel, stride, padding, 6)
+        self.up7 = D_UpBlock(base_filter, kernel, stride, padding, 6)
+        #Reconstruction
+        self.output_conv = ConvBlock(num_stages*base_filter, num_channels, 3, 1, 1, activation=None, norm=None)
+        
+        for m in self.modules():
+            classname = m.__class__.__name__
+            if classname.find('Conv2d') != -1:
+        	    torch.nn.init.kaiming_normal_(m.weight)
+        	    if m.bias is not None:
+        		    m.bias.data.zero_()
+            elif classname.find('ConvTranspose2d') != -1:
+        	    torch.nn.init.kaiming_normal_(m.weight)
+        	    if m.bias is not None:
+        		    m.bias.data.zero_()
+            
+    def forward(self, x):
+        x = self.feat0(x)
+        x = self.feat1(x)
+        
+        h1 = self.up1(x)
+        l1 = self.down1(h1)
+        h2 = self.up2(l1)
+        
+        concat_h = torch.cat((h2, h1),1)
+        l = self.down2(concat_h)
+        
+        concat_l = torch.cat((l, l1),1)
+        h = self.up3(concat_l)
+        
+        concat_h = torch.cat((h, concat_h),1)
+        l = self.down3(concat_h)
+        
+        concat_l = torch.cat((l, concat_l),1)
+        h = self.up4(concat_l)
+        
+        concat_h = torch.cat((h, concat_h),1)
+        l = self.down4(concat_h)
+        
+        concat_l = torch.cat((l, concat_l),1)
+        h = self.up5(concat_l)
+        
+        concat_h = torch.cat((h, concat_h),1)
+        l = self.down5(concat_h)
+        
+        concat_l = torch.cat((l, concat_l),1)
+        h = self.up6(concat_l)
+        
+        concat_h = torch.cat((h, concat_h),1)
+        l = self.down6(concat_h)
+        
+        concat_l = torch.cat((l, concat_l),1)
+        h = self.up7(concat_l)
+        
+        concat_h = torch.cat((h, concat_h),1)
+        x = self.output_conv(concat_h)
+        
+        return x
 
-        reconstruction = [
-            nn.Conv2d(self.depth * nr, args.n_colors, 3, padding=1) 
-        ]
-        self.reconstruction = nn.Sequential(*reconstruction)
 
-        self.add_mean = common.MeanShift(args.rgb_range, rgb_mean, rgb_std, 1)
+class ConvBlock(torch.nn.Module):
+    def __init__(self, input_size, output_size, kernel_size=3, stride=1, padding=1, bias=True, activation='prelu', norm=None):
+        super(ConvBlock, self).__init__()
+        self.conv = torch.nn.Conv2d(input_size, output_size, kernel_size, stride, padding, bias=bias)
+
+        self.norm = norm
+        if self.norm =='batch':
+            self.bn = torch.nn.BatchNorm2d(output_size)
+        elif self.norm == 'instance':
+            self.bn = torch.nn.InstanceNorm2d(output_size)
+
+        self.activation = activation
+        if self.activation == 'relu':
+            self.act = torch.nn.ReLU(True)
+        elif self.activation == 'prelu':
+            self.act = torch.nn.PReLU()
+        elif self.activation == 'lrelu':
+            self.act = torch.nn.LeakyReLU(0.2, True)
+        elif self.activation == 'tanh':
+            self.act = torch.nn.Tanh()
+        elif self.activation == 'sigmoid':
+            self.act = torch.nn.Sigmoid()
 
     def forward(self, x):
-        x = self.sub_mean(x)
-        x = self.initial(x)
+        if self.norm is not None:
+            out = self.bn(self.conv(x))
+        else:
+            out = self.conv(x)
 
-        h_list = []
-        l_list = []
-        for i in range(self.depth - 1):
-            if i == 0:
-                l = x
-            else:
-                l = torch.cat(l_list, dim=1)
-            h_list.append(self.upmodules[i](l))
-            l_list.append(self.downmodules[i](torch.cat(h_list, dim=1)))
+        if self.activation is not None:
+            return self.act(out)
+        else:
+            return out
+
+
+class DeconvBlock(torch.nn.Module):
+    def __init__(self, input_size, output_size, kernel_size=4, stride=2, padding=1, bias=True, activation='prelu', norm=None):
+        super(DeconvBlock, self).__init__()
+        self.deconv = torch.nn.ConvTranspose2d(input_size, output_size, kernel_size, stride, padding, bias=bias)
+
+        self.norm = norm
+        if self.norm == 'batch':
+            self.bn = torch.nn.BatchNorm2d(output_size)
+        elif self.norm == 'instance':
+            self.bn = torch.nn.InstanceNorm2d(output_size)
+
+        self.activation = activation
+        if self.activation == 'relu':
+            self.act = torch.nn.ReLU(True)
+        elif self.activation == 'prelu':
+            self.act = torch.nn.PReLU()
+        elif self.activation == 'lrelu':
+            self.act = torch.nn.LeakyReLU(0.2, True)
+        elif self.activation == 'tanh':
+            self.act = torch.nn.Tanh()
+        elif self.activation == 'sigmoid':
+            self.act = torch.nn.Sigmoid()
+
+    def forward(self, x):
+        if self.norm is not None:
+            out = self.bn(self.deconv(x))
+        else:
+            out = self.deconv(x)
+
+        if self.activation is not None:
+            return self.act(out)
+        else:
+            return out
+
+
+class UpBlock(torch.nn.Module):
+    def __init__(self, num_filter, kernel_size=8, stride=4, padding=2, bias=True, activation='prelu', norm=None):
+        super(UpBlock, self).__init__()
+        self.up_conv1 = DeconvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+        self.up_conv2 = ConvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+        self.up_conv3 = DeconvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)        
+
+    def forward(self, x):
+    	h0 = self.up_conv1(x)
+    	l0 = self.up_conv2(h0)
+    	h1 = self.up_conv3(l0 - x)
+    	return h1 + h0
+
         
-        h_list.append(self.upmodules[-1](torch.cat(l_list, dim=1)))
-        out = self.reconstruction(torch.cat(h_list, dim=1))
-        out = self.add_mean(out)
+class D_UpBlock(torch.nn.Module):
+    def __init__(self, num_filter, kernel_size=8, stride=4, padding=2, num_stages=1, bias=True, activation='prelu', norm=None):
+        super(D_UpBlock, self).__init__()
+        self.conv = ConvBlock(num_filter*num_stages, num_filter, 1, 1, 0, activation, norm=None)
+        self.up_conv1 = DeconvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+        self.up_conv2 = ConvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+        self.up_conv3 = DeconvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)        
 
-        return out
+    def forward(self, x):
+    	x = self.conv(x)
+    	h0 = self.up_conv1(x)
+    	l0 = self.up_conv2(h0)
+    	h1 = self.up_conv3(l0 - x)
+    	return h1 + h0
 
+
+class DownBlock(torch.nn.Module):
+    def __init__(self, num_filter, kernel_size=8, stride=4, padding=2, bias=True, activation='prelu', norm=None):
+        super(DownBlock, self).__init__()
+        self.down_conv1 = ConvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+        self.down_conv2 = DeconvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+        self.down_conv3 = ConvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+
+    def forward(self, x):
+    	l0 = self.down_conv1(x)
+    	h0 = self.down_conv2(l0)
+    	l1 = self.down_conv3(h0 - x)
+    	return l1 + l0
+
+
+class D_DownBlock(torch.nn.Module):
+    def __init__(self, num_filter, kernel_size=8, stride=4, padding=2, num_stages=1, bias=True, activation='prelu', norm=None):
+        super(D_DownBlock, self).__init__()
+        self.conv = ConvBlock(num_filter*num_stages, num_filter, 1, 1, 0, activation, norm=None)
+        self.down_conv1 = ConvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+        self.down_conv2 = DeconvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+        self.down_conv3 = ConvBlock(num_filter, num_filter, kernel_size, stride, padding, activation, norm=None)
+
+    def forward(self, x):
+    	x = self.conv(x)
+    	l0 = self.down_conv1(x)
+    	h0 = self.down_conv2(l0)
+    	l1 = self.down_conv3(h0 - x)
+    	return l1 + l0
