@@ -9,6 +9,7 @@ class NAMSS(srdata.SRData):
     def __init__(self, args, name='NAMSS', train=True, benchmark=False):
         self.cache_data = args.cache_data
         self.no_augment = args.no_augment if train else True
+        benchmark = args.benchmark
         data_range = [r.split('-') for r in args.data_range.split('/')]
         if train:
             data_range = data_range[0]
@@ -53,8 +54,12 @@ class NAMSS(srdata.SRData):
         if self.train:
             self.dir_hr = os.path.join(self.apath, 'NAMSS_train_HR')
             self.dir_lr = os.path.join(self.apath, 'NAMSS_train_LR_bicubic')
-        else:
+        elif not self.benchmark:
             self.dir_hr = os.path.join(self.apath, 'NAMSS_valid_HR')
             self.dir_lr = os.path.join(self.apath, 'NAMSS_valid_LR_bicubic')
+        else:
+            self.dir_hr = os.path.join(self.apath, 'NAMSS_test_HR')
+            self.dir_lr = os.path.join(self.apath, 'NAMSS_test_LR_bicubic')
         if self.input_large: self.dir_lr += 'L'
         self.ext = ('.tiff', '.tiff')
+

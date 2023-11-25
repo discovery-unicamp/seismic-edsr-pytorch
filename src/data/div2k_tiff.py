@@ -9,6 +9,8 @@ class DIV2K_TIFF(srdata.SRData):
     def __init__(self, args, name='DIV2K_TIFF', train=True, benchmark=False):
         self.cache_data = args.cache_data
         self.no_augment = args.no_augment if train else True
+        benchmark = args.benchmark
+
         data_range = [r.split('-') for r in args.data_range.split('/')]
         if train:
             data_range = data_range[0]
@@ -17,6 +19,7 @@ class DIV2K_TIFF(srdata.SRData):
                 data_range = data_range[0]
             else:
                 data_range = data_range[1]
+
 
         self.begin, self.end = list(map(lambda x: int(x), data_range))
         args.no_augment = True
@@ -53,8 +56,11 @@ class DIV2K_TIFF(srdata.SRData):
         if self.train:
             self.dir_hr = os.path.join(self.apath, 'DIV2K_train_HR')
             self.dir_lr = os.path.join(self.apath, 'DIV2K_train_LR_bicubic')
-        else:
+        elif not self.benchmark:
             self.dir_hr = os.path.join(self.apath, 'DIV2K_valid_HR')
             self.dir_lr = os.path.join(self.apath, 'DIV2K_valid_LR_bicubic')
+        else:
+            self.dir_hr = os.path.join(self.apath, 'DIV2K_test_HR')
+            self.dir_lr = os.path.join(self.apath, 'DIV2K_test_LR_bicubic')
         if self.input_large: self.dir_lr += 'L'
         self.ext = ('.tiff', '.tiff')
