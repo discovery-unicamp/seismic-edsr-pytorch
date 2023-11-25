@@ -5,8 +5,9 @@
 
 declare $@
 
+TRAIN_SET=$(python -c "print('DIV2K_TIFF' if '$DATASET' == 'Urban100' else '$DATASET')")
 EXPERIMENT_DIR=experiment-$EXPERIMENT_NUM
-MODEL_DIR=${TEMPLATE}-X${SCALE}-$DATASET-Seed${SEED}
+MODEL_DIR=${TEMPLATE}-X${SCALE}-${TRAIN_SET}-Seed${SEED}
 PRE_TRAIN_PATH="../$EXPERIMENT_DIR/$MODEL_DIR/model/model_best.pt"
 
 python main.py \
@@ -20,6 +21,8 @@ python main.py \
     --n_threads 0 \
     --n_GPUs 1 \
     --seed $SEED \
+    $BENCHMARK \
+    $CHOP \
     \
     --template $TEMPLATE \
     --scale $SCALE \

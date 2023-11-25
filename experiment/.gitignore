@@ -1,4 +1,0 @@
-*
-!.gitignore
-!/model/*.pt
-!archive-experiment.sh

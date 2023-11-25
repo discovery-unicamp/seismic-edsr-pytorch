@@ -64,6 +64,8 @@ parser.add_argument('--n_colors', type=int, default=3,
                     help='number of color channels to use')
 parser.add_argument('--chop', action='store_true',
                     help='enable memory-efficient forward')
+parser.add_argument('--max_chop_slices', type=int, default=6,
+                    help='max number of slices per dimension to chop an image')
 parser.add_argument('--no_augment', action='store_true',
                     help='do not use data augmentation')
 
@@ -185,12 +187,18 @@ parser.add_argument('--save_results', action='store_true',
                     help='save output results')
 parser.add_argument('--save_gt', action='store_true',
                     help='save low-resolution and high-resolution images together')
+parser.add_argument('--benchmark', action='store_true',
+                    help='use to differentiate between valid and test data')
 
 args = parser.parse_args()
 
 if args.cache_data and args.n_threads != 0:
     import sys
     sys.exit("When using --cache_data, --n_threds must be set to 0 to avoid multiple copies of the whole dataset being loaded to RAM. Exiting.")
+
+if args.benchmark and not args.test_only:
+    import sys
+    sys.exit("--benchmark option should only be used in --test_only mode. Exiting.")
 
 # No need to chache data that will be read only once
 if args.test_only:

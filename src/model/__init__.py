@@ -1,3 +1,4 @@
+import gc
 import os
 from importlib import import_module
 
@@ -15,12 +16,17 @@ class Model(nn.Module):
         self.idx_scale = 0
         self.input_large = (args.model == 'VDSR')
         self.self_ensemble = args.self_ensemble
-        self.chop = args.chop
         self.precision = args.precision
         self.cpu = args.cpu
         self.device = torch.device('cpu' if args.cpu else 'cuda')
         self.n_GPUs = args.n_GPUs
         self.save_models = args.save_models
+
+        # Chop params
+        self.chop = args.chop
+        self.max_img_area = 10**9
+        self.shave = 20
+        self.max_slices = args.max_chop_slices
 
         module = import_module('model.' + args.model.lower())
         self.model = module.make_model(args).to(self.device)
@@ -102,63 +108,90 @@ class Model(nn.Module):
         if load_from:
             self.model.load_state_dict(load_from, strict=False)
 
-    def forward_chop(self, *args, shave=10, min_size=1600000):
+    def _get_chops(self, x, num_slices):
+        shave = self.shave
+        height, width = x.size()[-2:]
+        h_chop, w_chop = height//num_slices, width//num_slices
+        x_chop = list()
+        for i in range(num_slices):
+            row_begin = i*h_chop - shave if i > 0 else 0
+            row_end = (i+1)*h_chop + shave if i < (num_slices - 1) else height
+            for j in range(num_slices):
+                col_begin = j*w_chop - shave if j > 0 else 0
+                col_end = (j+1)*w_chop + shave if j < (num_slices - 1) else width
+                x_chop.append(x[...,row_begin:row_end,col_begin:col_end])
+        return x_chop
+
+    def _assemble_chops(self, y_chops, x_height, x_width):
         scale = 1 if self.input_large else self.scale[self.idx_scale]
-        n_GPUs = min(self.n_GPUs, 4)
-        # height, width
-        h, w = args[0].size()[-2:]
+        shave = self.shave * scale
+        num_slices = int(len(y_chops)**0.5)
+        y_height, y_width = x_height * scale, x_width * scale
+        dims = y_chops[0].size()[:-2]
+        y = y_chops[0].new(*dims, y_height, y_width)
+        row_begin = 0
+        for i in range(num_slices):
+            col_begin = 0
+            for j in range(num_slices):
+                shave_top = shave if i > 0 else 0
+                shave_bottom = shave if i < (num_slices - 1) else 0
+                shave_left = shave if j > 0 else 0
+                shave_right = shave if j < (num_slices - 1) else 0
+                y_chop = y_chops[i*num_slices + j]
+                h_chop, w_chop = y_chop.size()[-2:]
+                h_chop -= (shave_top + shave_bottom)
+                w_chop -= (shave_left + shave_right)
+                row_end = row_begin + h_chop
+                col_end = col_begin + w_chop
+                y[...,row_begin:row_end,col_begin:col_end] = y_chop[...,shave_top:shave_top+h_chop,shave_left:shave_left+w_chop]
+                col_begin = col_end
+            row_begin = row_end
+        return y
 
-        top = slice(0, h//2 + shave)
-        bottom = slice(h - h//2 - shave, h)
-        left = slice(0, w//2 + shave)
-        right = slice(w - w//2 - shave, w)
-        x_chops = [torch.cat([
-            a[..., top, left],
-            a[..., top, right],
-            a[..., bottom, left],
-            a[..., bottom, right]
-        ]) for a in args]
+    def _clean_memory(self):
+        for p in self.model.parameters():
+            if p.grad is not None:
+                del p.grad
+        gc.collect()
+        torch.cuda.empty_cache()
+        return
 
-        y_chops = []
-        if h * w < 4 * min_size:
-            for i in range(0, 4, n_GPUs):
-                x = [x_chop[i:(i + n_GPUs)] for x_chop in x_chops]
-                y = P.data_parallel(self.model, *x, range(n_GPUs))
-                if not isinstance(y, list): y = [y]
-                if not y_chops:
-                    y_chops = [[c for c in _y.chunk(n_GPUs, dim=0)] for _y in y]
+    def forward_chop(self, x, num_slices=2):
+        h, w = x.size()[-2:]
+        img_area = h * w
+
+        #print(torch.cuda.memory_summary())
+        # Tries forward without chop first
+        if img_area < self.max_img_area:
+            oom = False
+            try:
+                y = self.model(x)
+            except Exception as e:
+                if not e.__class__ == torch.cuda.OutOfMemoryError:
+                    raise e
                 else:
-                    for y_chop, _y in zip(y_chops, y):
-                        y_chop.extend(_y.chunk(n_GPUs, dim=0))
+                    oom = True
+            if oom:
+                self.max_img_area = img_area
+                self._clean_memory()
+                y = self.forward_chop(x, num_slices)
         else:
-            for p in zip(*x_chops):
-                y = self.forward_chop(*p, shave=shave, min_size=min_size)
-                if not isinstance(y, list): y = [y]
-                if not y_chops:
-                    y_chops = [[_y] for _y in y]
+            oom = False
+            try:
+                x_chops = self._get_chops(x, num_slices)
+                y_chops = [self.model(_x) for _x in x_chops]
+                y = self._assemble_chops(y_chops, h, w)
+            except Exception as e:
+                if not e.__class__ == torch.cuda.OutOfMemoryError:
+                    raise e
+                if num_slices >= self.max_slices:
+                    print(f"Forward chop reached maximum number of slices {self.max_slices} and image is still too big.")
+                    raise e
                 else:
-                    for y_chop, _y in zip(y_chops, y): y_chop.append(_y)
-
-        h *= scale
-        w *= scale
-        top = slice(0, h//2)
-        bottom = slice(h - h//2, h)
-        bottom_r = slice(h//2 - h, None)
-        left = slice(0, w//2)
-        right = slice(w - w//2, w)
-        right_r = slice(w//2 - w, None)
-
-        # batch size, number of color channels
-        b, c = y_chops[0][0].size()[:-2]
-        y = [y_chop[0].new(b, c, h, w) for y_chop in y_chops]
-        for y_chop, _y in zip(y_chops, y):
-            _y[..., top, left] = y_chop[0][..., top, left]
-            _y[..., top, right] = y_chop[1][..., top, right_r]
-            _y[..., bottom, left] = y_chop[2][..., bottom_r, left]
-            _y[..., bottom, right] = y_chop[3][..., bottom_r, right_r]
-
-        if len(y) == 1: y = y[0]
-
+                    oom = True
+            if oom:
+                self._clean_memory()
+                y = self.forward_chop(x, num_slices+1)
         return y
 
     def forward_x8(self, *args, forward_function=None):

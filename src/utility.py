@@ -76,8 +76,6 @@ class checkpoint():
 
         os.makedirs(self.dir, exist_ok=True)
         os.makedirs(self.get_path('model'), exist_ok=True)
-        for d in args.data_test:
-            os.makedirs(self.get_path('results-{}'.format(d)), exist_ok=True)
 
         open_type = 'a' if os.path.exists(self.get_path('log.txt'))else 'w'
         self.log_file = open(self.get_path('log.txt'), open_type)
@@ -249,10 +247,12 @@ class checkpoint():
 
     def save_results(self, dataset, filename, save_list, scale):
         if self.args.save_results:
-            filename = self.get_path(
-                'results-{}'.format(dataset.dataset.name),
-                '{}_x{}_'.format(filename, scale)
-            )
+            save_dir = self.get_path(
+                    'results-{}{}'.format(dataset.dataset.name,
+                    '-benchmark' if self.args.benchmark else '')
+                    )
+            os.makedirs(save_dir, exist_ok=True)
+            filename = os.path.join(save_dir, '{}_x{}_'.format(filename, scale))
 
             postfix = ('SR', 'LR', 'HR')
             ext = dataset.dataset.ext[1]
