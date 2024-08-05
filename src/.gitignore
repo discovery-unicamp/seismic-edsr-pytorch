@@ -1,4 +1,3 @@
-Explorer.ipynb
-range.py
-test.sh
-train_lr.sh
+logs*
+experiment_scripts
+test_scripts
