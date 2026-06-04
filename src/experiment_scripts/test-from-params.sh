@@ -28,7 +28,7 @@ python main.py \
     --scale $SCALE \
     --shift_mean False \
     \
-    --dir_data ../../Data \
+    --dir_data ../datasets \
     --data_train $DATASET \
     --data_test $DATASET \
     --data_range $TEST_DATA_RANGE \

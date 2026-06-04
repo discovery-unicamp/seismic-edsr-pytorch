@@ -29,7 +29,7 @@ python main.py \
     --shift_mean False \
     \
     --cache_data \
-    --dir_data ../../Data \
+    --dir_data ../datasets \
     --data_train $DATASET \
     --data_test $DATASET \
     --data_range $TRAIN_DATA_RANGE \
