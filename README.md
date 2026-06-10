@@ -115,13 +115,13 @@ Trained models and results are saved under `experiment-<NN>/`.
 
 ### Trained weights
 
-Pre-trained model weights will be available at [REDU (Repositório de Dados da Unicamp)](https://redu.unicamp.br/) — link pending.
+Pre-trained model weights are available at [REDU (Repositório de Dados da Unicamp)](https://doi.org/10.25824/redu/H7JZO1).
 
 To reproduce the benchmark results from the trained weights, download and extract the archives from the project root:
 
 ```bash
-tar -xzf EDSR-DIV2K-trained-weights.tar.gz
-tar -xzf EDSR-Unicamp-NAMSS-trained-weights.tar.gz
+tar xf EDSR-DIV2K-trained-weights.tar
+tar xf EDSR-NAMSS-trained-weights.tar
 # ... etc.
 ```
 
